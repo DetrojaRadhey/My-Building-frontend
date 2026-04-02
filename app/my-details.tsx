@@ -41,19 +41,33 @@ export default function MyDetailsScreen() {
   };
 
   const PHONE_RE = /^[6-9]\d{9}$/;
+  const FLAT_RE = /^[A-Za-z0-9\-\/]+$/;
 
   const saveDetails = async () => {
-    if (details.phone && !PHONE_RE.test(details.phone.trim()))
+    const phone = details.phone.trim();
+    const flat_no = details.flat_no.trim();
+    const wing = details.wing.trim();
+    const total_members = details.total_members.trim();
+
+    // All fields mandatory
+    if (!phone) return Alert.alert('Required', 'Mobile number is required');
+    if (!flat_no) return Alert.alert('Required', 'Flat number is required');
+    if (!wing) return Alert.alert('Required', 'Wing is required');
+    if (!total_members) return Alert.alert('Required', 'Total members is required');
+
+    // Validations
+    if (!PHONE_RE.test(phone))
       return Alert.alert('Invalid Phone', 'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9');
-    if (details.total_members && (isNaN(Number(details.total_members)) || Number(details.total_members) < 1))
+    if (isNaN(Number(total_members)) || Number(total_members) < 1)
       return Alert.alert('Invalid', 'Total members must be a positive number');
+
     setSaving(true);
     try {
       await api.patch('/auth/profile', {
-        phone: details.phone,
-        flat_no: details.flat_no,
-        wing: details.wing,
-        total_members: details.total_members || null,
+        phone,
+        flat_no,
+        wing,
+        total_members,
       });
       await refreshUser();
       setEditing(false);
@@ -71,8 +85,6 @@ export default function MyDetailsScreen() {
     { icon: 'people-outline', label: 'Total Members', field: 'total_members', placeholder: 'e.g. 4', keyboardType: 'numeric' as const },
     { icon: 'layers-outline', label: 'Wing', field: 'wing', placeholder: 'e.g. B', keyboardType: 'default' as const },
   ];
-
-  // Auto-open edit mode if phone is missing
   useEffect(() => {
     if (!user?.phone && !editing) setEditing(true);
   }, [user?.phone]);
@@ -107,7 +119,7 @@ export default function MyDetailsScreen() {
               <Ionicons name={row.icon as any} size={20} color={Colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>{row.label}</Text>
+              <Text style={styles.label}>{row.label}{editing ? <Text style={{ color: Colors.danger }}> *</Text> : null}</Text>
               {editing ? (
                 <TextInput
                   style={styles.input}

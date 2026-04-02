@@ -17,6 +17,7 @@ type Member = {
   role: 'user' | 'pramukh' | 'watchman';
   status: string;
   flat_no: string | null;
+  wing: string | null;
 };
 
 const ROLE_COLOR: Record<string, string> = {
@@ -57,6 +58,7 @@ export default function MembersScreen() {
   const filtered = members.filter(m =>
     m.name.toLowerCase().includes(search.toLowerCase()) ||
     (m.flat_no || '').toLowerCase().includes(search.toLowerCase()) ||
+    (m.wing || '').toLowerCase().includes(search.toLowerCase()) ||
     (m.phone || '').includes(search)
   );
 
@@ -76,6 +78,13 @@ export default function MembersScreen() {
               <Text style={[styles.roleText, { color }]}>{ROLE_LABEL[item.role] || item.role}</Text>
             </View>
           </View>
+
+          {item.wing ? (
+            <View style={styles.detailRow}>
+              <Ionicons name="layers-outline" size={13} color={Colors.textMuted} />
+              <Text style={styles.detailText}>Wing {item.wing}</Text>
+            </View>
+          ) : null}
 
           {item.flat_no ? (
             <View style={styles.detailRow}>
