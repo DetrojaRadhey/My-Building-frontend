@@ -25,7 +25,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const res = await api.post('/auth/login/unified', { email: email.trim(), password });
-      await login(res.data.token, res.data.user);
+      await login(res.data.token, res.data.user, res.data.subscription ?? null);
       router.replace('/');
     } catch (e: any) {
       const msg = e.response?.data?.error || e.message || 'Cannot connect to server';

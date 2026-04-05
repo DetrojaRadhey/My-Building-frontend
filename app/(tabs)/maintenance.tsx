@@ -66,6 +66,7 @@ export default function MaintenanceScreen() {
   const [bills, setBills] = useState<any[]>([]);
   const [showEditBill, setShowEditBill] = useState<any>(null);
   const [editForm, setEditForm] = useState({ penalty_amount: '', description: '', due_date: '' });
+  const [billSubTab, setBillSubTab] = useState<'current' | 'paid'>('current');
 
   useFocusEffect(useCallback(() => { fetchPayments(); fetchBills(); }, [selectedBuilding]));
 
@@ -360,21 +361,103 @@ export default function MaintenanceScreen() {
       ) : (
         <>
           {/* ── MY BILLS tab ── */}
-          {activeTab === 'my-bills' && (
-            <FlatList
-              data={myBills}
-              keyExtractor={i => i.id}
-              renderItem={({ item }) => renderBillCard(item)}
-              contentContainerStyle={styles.list}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchPayments(); }} />}
-              ListEmptyComponent={
-                <View style={styles.empty}>
-                  <Ionicons name="receipt-outline" size={52} color={Colors.border} />
-                  <Text style={styles.emptyText}>No bills yet</Text>
+          {activeTab === 'my-bills' && (() => {
+            const pendingBills = myBills.filter(p => p.status !== 'paid');
+            const paidBills = myBills.filter(p => p.status === 'paid');
+            const totalDue = pendingBills.reduce((s, p) => {
+              const bill = p.maintenance_bills;
+              const penalty = Number(p.penalty_amount || bill?.penalty_amount || 0);
+              const dueDate = bill?.due_date;
+              const isOverdue = dueDate && new Date(dueDate) < new Date();
+              return s + Number(p.amount) + (isOverdue && penalty > 0 ? penalty : 0);
+            }, 0);
+            const totalPaid = paidBills.reduce((s, p) => s + Number(p.total_amount || p.amount), 0);
+            const activeBillTab = billSubTab;
+            const displayBills = activeBillTab === 'current' ? pendingBills : paidBills;
+
+            return (
+              <View style={{ flex: 1 }}>
+                {/* Summary banner */}
+                <View style={styles.summaryBanner}>
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.summaryValue}>₹{totalDue.toLocaleString('en-IN')}</Text>
+                    <Text style={styles.summaryLabel}>Amount Due</Text>
+                  </View>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryItem}>
+                    <Text style={[styles.summaryValue, { color: '#86efac' }]}>₹{totalPaid.toLocaleString('en-IN')}</Text>
+                    <Text style={styles.summaryLabel}>Total Paid</Text>
+                  </View>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.summaryValue}>{myBills.length}</Text>
+                    <Text style={styles.summaryLabel}>Total Bills</Text>
+                  </View>
                 </View>
-              }
-            />
-          )}
+
+                {/* Current / Paid switcher */}
+                <View style={styles.billSubTabRow}>
+                  <TouchableOpacity
+                    style={[styles.billSubTab, activeBillTab === 'current' && styles.billSubTabActive]}
+                    onPress={() => setBillSubTab('current')}
+                  >
+                    <Ionicons
+                      name="time-outline"
+                      size={15}
+                      color={activeBillTab === 'current' ? Colors.white : Colors.danger}
+                    />
+                    <Text style={[styles.billSubTabText, activeBillTab === 'current' && styles.billSubTabTextActive]}>
+                      Current Bills
+                    </Text>
+                    {pendingBills.length > 0 && (
+                      <View style={[styles.billSubTabBadge, { backgroundColor: activeBillTab === 'current' ? 'rgba(255,255,255,0.3)' : Colors.danger }]}>
+                        <Text style={styles.billSubTabBadgeText}>{pendingBills.length}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.billSubTab, activeBillTab === 'paid' && styles.billSubTabPaidActive]}
+                    onPress={() => setBillSubTab('paid')}
+                  >
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={15}
+                      color={activeBillTab === 'paid' ? Colors.white : Colors.success}
+                    />
+                    <Text style={[styles.billSubTabText, { color: activeBillTab === 'paid' ? Colors.white : Colors.success }, activeBillTab === 'paid' && styles.billSubTabTextActive]}>
+                      Paid Bills
+                    </Text>
+                    {paidBills.length > 0 && (
+                      <View style={[styles.billSubTabBadge, { backgroundColor: activeBillTab === 'paid' ? 'rgba(255,255,255,0.3)' : Colors.success }]}>
+                        <Text style={styles.billSubTabBadgeText}>{paidBills.length}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                <FlatList
+                  data={displayBills}
+                  keyExtractor={i => i.id}
+                  renderItem={({ item }) => renderBillCard(item)}
+                  contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+                  refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchPayments(); }} />}
+                  ListEmptyComponent={
+                    <View style={styles.empty}>
+                      <Ionicons
+                        name={activeBillTab === 'current' ? 'receipt-outline' : 'checkmark-circle-outline'}
+                        size={52}
+                        color={Colors.border}
+                      />
+                      <Text style={styles.emptyText}>
+                        {activeBillTab === 'current' ? 'No pending bills' : 'No paid bills yet'}
+                      </Text>
+                    </View>
+                  }
+                />
+              </View>
+            );
+          })()}
 
           {/* ── MEMBERS tab ── */}
           {activeTab === 'members' && (
@@ -655,8 +738,53 @@ const styles = StyleSheet.create({
 
   list: { padding: 16 },
 
+  // Summary banner
+  summaryBanner: {
+    flexDirection: 'row', backgroundColor: Colors.primary, borderRadius: 16,
+    padding: 18, marginHorizontal: 16, marginTop: 14, marginBottom: 4, alignItems: 'center',
+    shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5,
+  },
+  summaryItem: { flex: 1, alignItems: 'center' },
+  summaryValue: { fontSize: 20, fontWeight: '800', color: Colors.white },
+  summaryLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 3, fontWeight: '600' },
+  summaryDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.25)' },
+
+  // Bill sub-tab switcher
+  billSubTabRow: {
+    flexDirection: 'row', gap: 10,
+    marginHorizontal: 16, marginTop: 14, marginBottom: 2,
+  },
+  billSubTab: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 11, borderRadius: 12,
+    borderWidth: 1.5, borderColor: Colors.border,
+    backgroundColor: Colors.white,
+  },
+  billSubTabActive: {
+    backgroundColor: Colors.danger, borderColor: Colors.danger,
+  },
+  billSubTabPaidActive: {
+    backgroundColor: Colors.success, borderColor: Colors.success,
+  },
+  billSubTabText: { fontSize: 13, fontWeight: '700', color: Colors.danger },
+  billSubTabTextActive: { color: Colors.white },
+  billSubTabBadge: {
+    borderRadius: 10, paddingHorizontal: 7, paddingVertical: 1,
+  },
+  billSubTabBadgeText: { fontSize: 11, fontWeight: '800', color: Colors.white },
+
+  // Section headers (kept for other uses)
+  sectionHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginBottom: 10, marginTop: 4,
+  },
+  sectionDot: { width: 8, height: 8, borderRadius: 4 },
+  sectionTitle: { fontSize: 14, fontWeight: '800', flex: 1, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionBadge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  sectionBadgeText: { fontSize: 12, fontWeight: '800', color: Colors.white },
+
   // Bill card
-  billCard: { flexDirection: 'row', backgroundColor: Colors.white, borderRadius: 14, marginBottom: 10, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  billCard: { flexDirection: 'row', backgroundColor: Colors.white, borderRadius: 16, marginBottom: 12, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
   billCardPaid: { opacity: 0.9 },
   billAccent: { width: 4 },
   billBody: { flex: 1, padding: 14 },

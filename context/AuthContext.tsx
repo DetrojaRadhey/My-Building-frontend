@@ -29,7 +29,7 @@ type AuthContextType = {
   token: string | null;
   subscription: Subscription;
   hasActiveSubscription: boolean;
-  login: (token: string, user: User) => Promise<void>;
+  login: (token: string, user: User, subscription?: Subscription) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -77,13 +77,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const login = async (t: string, u: User) => {
-    await AsyncStorage.multiSet([['token', t], ['user', JSON.stringify(u)]]);
+  const login = async (t: string, u: User, sub?: Subscription) => {
+    // If subscription came with the login response, cache it immediately — no extra round trip
+    const resolvedSub = sub !== undefined ? sub : null;
+    await AsyncStorage.multiSet([
+      ['token', t],
+      ['user', JSON.stringify(u)],
+      ['subscription', JSON.stringify(resolvedSub)],
+    ]);
     setToken(t);
     setUser(u);
-    // Await subscription so home screen renders with correct locked/unlocked state
-    await fetchSubscription(t);
-    registerPushToken(t); // push token is non-critical, keep in background
+    setSubscription(resolvedSub);
+
+    // Refresh subscription in background only if it wasn't provided
+    if (sub === undefined) fetchSubscription(t);
+
+    registerPushToken(t);
   };
 
   const registerPushToken = async (t: string) => {

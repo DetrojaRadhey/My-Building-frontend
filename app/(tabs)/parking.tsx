@@ -14,6 +14,101 @@ import type { Building } from '../../hooks/useBuildings';
 
 type Tab = 'vehicles' | 'reports';
 
+function VehicleDropdown({ vehicles, selected, onSelect, isAdmin, hasBuilding }: {
+  vehicles: any[];
+  selected: string;
+  onSelect: (vn: string) => void;
+  isAdmin: boolean;
+  hasBuilding: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const selectedVehicle = vehicles.find(v => v.vehicle_number === selected);
+  const displayLabel = selectedVehicle
+    ? `${selectedVehicle.vehicle_type === 'four_wheeler' ? '🚗' : '🏍️'}  ${selectedVehicle.vehicle_number}`
+    : 'Select vehicle number';
+
+  if (!hasBuilding) {
+    return (
+      <View style={ddStyles.trigger}>
+        <Ionicons name="car-outline" size={18} color={Colors.textMuted} />
+        <Text style={ddStyles.placeholder}>Select a building first</Text>
+      </View>
+    );
+  }
+
+  if (vehicles.length === 0) {
+    return (
+      <View style={ddStyles.trigger}>
+        <Ionicons name="car-outline" size={18} color={Colors.textMuted} />
+        <Text style={ddStyles.placeholder}>No vehicles registered</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ marginBottom: 4 }}>
+      <TouchableOpacity style={[ddStyles.trigger, open && ddStyles.triggerOpen]} onPress={() => setOpen(o => !o)} activeOpacity={0.8}>
+        <Ionicons name="car-outline" size={18} color={selected ? Colors.primary : Colors.textMuted} />
+        <Text style={[ddStyles.triggerText, selected && ddStyles.triggerTextSelected]}>{displayLabel}</Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.textMuted} />
+      </TouchableOpacity>
+
+      {open && (
+        <View style={ddStyles.menu}>
+          {vehicles.map((v: any) => {
+            const active = selected === v.vehicle_number;
+            return (
+              <TouchableOpacity
+                key={v.id}
+                style={[ddStyles.item, active && ddStyles.itemActive]}
+                onPress={() => { onSelect(v.vehicle_number); setOpen(false); }}
+              >
+                <Text style={ddStyles.itemEmoji}>{v.vehicle_type === 'four_wheeler' ? '🚗' : '🏍️'}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[ddStyles.itemText, active && ddStyles.itemTextActive]}>{v.vehicle_number}</Text>
+                  {v.users ? (
+                    <Text style={ddStyles.itemSub}>{v.users.name}{v.users.flat_no ? ` · Flat ${v.users.flat_no}` : ''}</Text>
+                  ) : null}
+                </View>
+                {active && <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const ddStyles = StyleSheet.create({
+  trigger: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
+    padding: 12, backgroundColor: Colors.bg, marginBottom: 12,
+  },
+  triggerOpen: { borderColor: Colors.primary, backgroundColor: Colors.white },
+  triggerText: { flex: 1, fontSize: 15, color: Colors.textMuted },
+  triggerTextSelected: { color: Colors.text, fontWeight: '600' },
+  placeholder: { flex: 1, fontSize: 15, color: Colors.textMuted },
+  menu: {
+    borderWidth: 1.5, borderColor: Colors.primary + '40', borderRadius: 10,
+    backgroundColor: Colors.white, marginBottom: 12,
+    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
+    overflow: 'hidden',
+  },
+  item: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 14, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+  },
+  itemActive: { backgroundColor: Colors.primary + '10' },
+  itemEmoji: { fontSize: 18 },
+  itemText: { fontSize: 14, fontWeight: '600', color: Colors.text },
+  itemTextActive: { color: Colors.primary },
+  itemSub: { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
+});
+
 export default function ParkingScreen() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -83,7 +178,10 @@ export default function ParkingScreen() {
 
   const submitReport = async () => {
     if (isAdmin && !reportBuilding) return Alert.alert('Error', 'Please select a building');
-    if (!reportForm.description.trim()) return Alert.alert('Error', 'Description is required');
+    const desc = reportForm.description.trim();
+    if (!desc) return Alert.alert('Error', 'Description is required');
+    const wordCount = desc.split(/\s+/).filter(Boolean).length;
+    if (wordCount < 5) return Alert.alert('Error', 'Description must be at least 5 words');
     setSubmitting(true);
     try {
       await api.post('/vehicles/report', {
@@ -338,28 +436,81 @@ export default function ParkingScreen() {
         <View style={styles.modal}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Report Misparking</Text>
-            <TouchableOpacity onPress={() => setShowReport(false)}>
+            <TouchableOpacity onPress={() => { setShowReport(false); setReportForm({ description: '', vehicle_number: '', location: '' }); setReportBuilding(null); }}>
               <Ionicons name="close" size={24} color={Colors.text} />
             </TouchableOpacity>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {isAdmin && (
-              <BuildingDropdown
-                buildings={buildings}
-                loading={buildingsLoading}
-                selected={reportBuilding}
-                onSelect={setReportBuilding}
-                label="Select Building *"
-              />
+              <>
+                <BuildingDropdown
+                  buildings={buildings}
+                  loading={buildingsLoading}
+                  selected={reportBuilding}
+                  onSelect={(b) => { setReportBuilding(b); setReportForm(f => ({ ...f, vehicle_number: '' })); }}
+                  label="Select Building *"
+                />
+                <View style={{ height: 12 }} />
+              </>
             )}
-            <Text style={styles.label}>Description *</Text>
-            <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} value={reportForm.description} onChangeText={(v) => setReportForm({ ...reportForm, description: v })} placeholder="Describe the parking issue..." multiline placeholderTextColor={Colors.textMuted} />
-            <Text style={styles.label}>Vehicle Number (if known)</Text>
-            <TextInput style={styles.input} value={reportForm.vehicle_number} onChangeText={(v) => setReportForm({ ...reportForm, vehicle_number: v })} placeholder="e.g. GJ06HY2323" autoCapitalize="characters" placeholderTextColor={Colors.textMuted} />
+
+            {/* Description with word count */}
+            <Text style={styles.label}>Description <Text style={{ color: Colors.danger }}>*</Text></Text>
+            <Text style={styles.labelHint}>Minimum 5 words — describe the issue clearly</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={reportForm.description}
+              onChangeText={(v) => setReportForm({ ...reportForm, description: v })}
+              placeholder="e.g. Vehicle blocking the main gate entrance since morning..."
+              multiline
+              numberOfLines={4}
+              placeholderTextColor={Colors.textMuted}
+            />
+            <Text style={[
+              styles.wordCount,
+              reportForm.description.trim().split(/\s+/).filter(Boolean).length >= 5
+                ? { color: Colors.success }
+                : { color: Colors.textMuted }
+            ]}>
+              {reportForm.description.trim().split(/\s+/).filter(Boolean).length} / 5 words minimum
+            </Text>
+
+            {/* Vehicle number dropdown */}
+            <Text style={styles.label}>Vehicle Number</Text>
+            <Text style={styles.labelHint}>Select from registered vehicles in your building</Text>
+            <VehicleDropdown
+              vehicles={(() => {
+                return isAdmin && reportBuilding
+                  ? vehicles.filter((v: any) => v.building_id === reportBuilding.id)
+                  : vehicles;
+              })()}
+              selected={reportForm.vehicle_number}
+              onSelect={(vn) => setReportForm(f => ({ ...f, vehicle_number: vn }))}
+              isAdmin={isAdmin}
+              hasBuilding={!isAdmin || !!reportBuilding}
+            />
+
             <Text style={styles.label}>Location</Text>
-            <TextInput style={styles.input} value={reportForm.location} onChangeText={(v) => setReportForm({ ...reportForm, location: v })} placeholder="e.g. Near Gate 2" placeholderTextColor={Colors.textMuted} />
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: Colors.danger }]} onPress={submitReport} disabled={submitting}>
-              {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit Report</Text>}
+            <TextInput
+              style={styles.input}
+              value={reportForm.location}
+              onChangeText={(v) => setReportForm({ ...reportForm, location: v })}
+              placeholder="e.g. Near Gate 2, Basement B1"
+              placeholderTextColor={Colors.textMuted}
+            />
+
+            <TouchableOpacity
+              style={[styles.submitBtn, { backgroundColor: Colors.danger }, submitting && { opacity: 0.6 }]}
+              onPress={submitReport}
+              disabled={submitting}
+            >
+              {submitting
+                ? <ActivityIndicator color="#fff" />
+                : <>
+                    <Ionicons name="warning-outline" size={18} color={Colors.white} />
+                    <Text style={styles.submitBtnText}>Submit Report</Text>
+                  </>
+              }
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -416,6 +567,9 @@ const styles = StyleSheet.create({
   typeBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   typeBtnText: { fontSize: 14, fontWeight: '600', color: Colors.text },
   typeBtnTextActive: { color: Colors.white },
-  submitBtn: { backgroundColor: Colors.primary, borderRadius: 12, padding: 15, alignItems: 'center', marginTop: 20, marginBottom: 20 },
+  submitBtn: { backgroundColor: Colors.primary, borderRadius: 12, padding: 15, alignItems: 'center', marginTop: 20, marginBottom: 20, flexDirection: 'row', justifyContent: 'center', gap: 8 },
   submitBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+  textArea: { height: 100, textAlignVertical: 'top' },
+  labelHint: { fontSize: 12, color: Colors.textMuted, marginBottom: 6, marginTop: -4 },
+  wordCount: { fontSize: 12, fontWeight: '600', marginTop: 4, marginBottom: 12, textAlign: 'right' },
 });
