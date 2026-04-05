@@ -21,6 +21,7 @@ export default function ProfileScreen() {
   const roleColor = isAdmin ? Colors.danger : isPramukh ? Colors.accent : Colors.success;
 
   const menuItems = isAdmin ? [] : [
+    { icon: 'warning-outline', label: 'My Complaints', onPress: () => router.push('/complaints?mine=true' as any) },
     { icon: 'car-outline', label: 'My Vehicles', onPress: () => router.push('/my-vehicles' as any) },
     { icon: 'wallet-outline', label: 'Payment History', onPress: () => router.push('/my-payments' as any) },
   ];

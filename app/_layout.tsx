@@ -34,6 +34,8 @@ function RootNavigator() {
       <Stack.Screen name="subscribe" />
       <Stack.Screen name="subscriptions-admin" />
       <Stack.Screen name="helpline" />
+      <Stack.Screen name="complaints" />
+      <Stack.Screen name="complaints-admin" />
       <Stack.Screen name="entry/[building_id]" options={{ headerShown: false }} />
     </Stack>
   );
