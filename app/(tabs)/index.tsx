@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
+import { useActivityLog } from '../../hooks/useActivityLog';
 
 // Modules that require subscription to access
 const GATED_ROUTES = [
@@ -30,6 +31,7 @@ const TYPE_TO_ROUTE: Record<string, string> = {
 export default function HomeScreen() {
   const { user, hasActiveSubscription } = useAuth();
   const router = useRouter();
+  const { logEvent } = useActivityLog();
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
@@ -37,7 +39,7 @@ export default function HomeScreen() {
   const isPendingUser = user?.role === 'user' && !user?.building_id;
   const needsSubscription = user?.role !== 'admin' && !hasActiveSubscription;
 
-  const handleModuleTap = (route: string) => {
+  const handleModuleTap = (route: string, title: string) => {
     if (needsSubscription && GATED_ROUTES.includes(route)) {
       Alert.alert(
         'Subscription Required',
@@ -49,6 +51,7 @@ export default function HomeScreen() {
       );
       return;
     }
+    logEvent(`tap_module_${title.toLowerCase().replace(/\s+/g, '_')}`, route.replace('/', '') || 'home');
     router.push(route as any);
   };
 
@@ -73,6 +76,7 @@ export default function HomeScreen() {
     { title: 'Helpline', icon: 'call', color: '#EF4444', route: '/helpline', adminOnly: true },
     { title: 'Subscriptions', icon: 'card', color: '#7C3AED', route: '/subscriptions-admin', adminOnly: true },
     { title: 'Promo Codes', icon: 'pricetag', color: '#EC4899', route: '/promos', adminOnly: true },
+    { title: 'Activity Logs', icon: 'list-circle', color: '#475569', route: '/activity-logs', adminOnly: true },
   ];
 
   const modules = allModules.filter((m: any) => {
@@ -165,7 +169,7 @@ export default function HomeScreen() {
           const count = badgeCounts[m.route] || 0;
           const isLocked = needsSubscription && GATED_ROUTES.includes(m.route);
           return (
-            <TouchableOpacity key={m.title} style={[styles.moduleCard, isLocked && styles.moduleCardLocked]} onPress={() => handleModuleTap(m.route)}>
+            <TouchableOpacity key={m.title} style={[styles.moduleCard, isLocked && styles.moduleCardLocked]} onPress={() => handleModuleTap(m.route, m.title)}>
               <View style={{ position: 'relative' }}>
                 <View style={[styles.moduleIcon, { backgroundColor: m.color + '20' }]}>
                   <Ionicons name={m.icon as any} size={28} color={isLocked ? Colors.textMuted : m.color} />

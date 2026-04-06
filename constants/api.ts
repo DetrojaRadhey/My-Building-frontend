@@ -1,4 +1,4 @@
-// Your machine's local IP — update this if your IP changes
-// Use 10.0.2.2 for Android emulator, or your actual LAN IP for physical device
-export const API_BASE = 'http://10.10.5.59:5000/api';
-export const ENTRY_BASE = 'http://10.10.5.59:5000/entry';
+// Values come from .env — copy .env.example to .env and fill in your values
+// EXPO_PUBLIC_ prefix makes them available in the app bundle (Expo SDK 49+)
+export const API_BASE   = process.env.EXPO_PUBLIC_API_BASE   ?? 'http://localhost:5000/api';
+export const ENTRY_BASE = process.env.EXPO_PUBLIC_ENTRY_BASE ?? 'http://localhost:5000/entry';

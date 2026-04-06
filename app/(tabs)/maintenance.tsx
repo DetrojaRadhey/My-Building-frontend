@@ -14,6 +14,7 @@ import { useBuildings } from '../../hooks/useBuildings';
 import BuildingDropdown from '../../components/BuildingDropdown';
 import type { Building } from '../../hooks/useBuildings';
 import { useMarkNotificationsRead } from '../../hooks/useMarkNotificationsRead';
+import { useActivityLog } from '../../hooks/useActivityLog';
 
 const MONTHS = ['', 'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
@@ -34,6 +35,7 @@ type Tab = 'my-bills' | 'members' | 'bills';
 export default function MaintenanceScreen() {
   const { user, token } = useAuth();
   const router = useRouter();
+  const { logEvent } = useActivityLog();
   const isAdmin = user?.role === 'admin';
   const isPramukh = user?.role === 'pramukh' || isAdmin;
   const isUser = user?.role === 'user';
@@ -68,7 +70,7 @@ export default function MaintenanceScreen() {
   const [editForm, setEditForm] = useState({ penalty_amount: '', description: '', due_date: '' });
   const [billSubTab, setBillSubTab] = useState<'current' | 'paid'>('current');
 
-  useFocusEffect(useCallback(() => { fetchPayments(); fetchBills(); }, [selectedBuilding]));
+  useFocusEffect(useCallback(() => { fetchPayments(); fetchBills(); logEvent('open_maintenance', 'maintenance'); }, [selectedBuilding]));
 
   useEffect(() => {
     const handleUrl = (event: { url: string }) => {
@@ -161,19 +163,34 @@ export default function MaintenanceScreen() {
 
   const initiatePayment = async (record: any) => {
     setPayingId(record.id);
+    const bill = record.maintenance_bills;
+    logEvent('tap_pay_bill', 'maintenance', {
+      record_id: record.id,
+      amount: record.amount,
+      total_amount: record.total_amount,
+      period: bill ? `${bill.month}/${bill.year}` : undefined,
+      status: record.status,
+    });
     try {
       const res = await api.post('/maintenance/pay/order', { payment_record_id: record.id });
+      logEvent('payment_initiated', 'maintenance', {
+        record_id: record.id,
+        amount: res.data.total_amount,
+        bill_period: bill ? `${bill.month}/${bill.year}` : undefined,
+      });
       await WebBrowser.openBrowserAsync(res.data.checkout_url, {
         dismissButtonStyle: 'cancel',
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
       });
       fetchPayments();
     } catch (e: any) {
+      logEvent('payment_initiation_failed', 'maintenance', { record_id: record.id, error: e.response?.data?.error });
       Alert.alert('Error', e.response?.data?.error || 'Failed');
     } finally { setPayingId(null); }
   };
 
   const downloadReceipt = async (record: any) => {
+    logEvent('download_receipt', 'maintenance', { record_id: record.id });
     const url = `${API_BASE}/maintenance/receipt/${record.id}?token=${token}`;
     try { await Linking.openURL(url); } catch { Alert.alert('Error', 'Could not open receipt'); }
   };
@@ -317,7 +334,10 @@ export default function MaintenanceScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Maintenance</Text>
           {isPramukh && <Text style={styles.headerSub}>{billStats.pending} pending · {billStats.paid} paid</Text>}
         </View>
@@ -728,6 +748,7 @@ const styles = StyleSheet.create({
   headerSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 },
   headerActions: { flexDirection: 'row', gap: 8 },
   headerBtn: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: 8 },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
   filterBar: { backgroundColor: Colors.white, paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.border },
 
   tabBar: { flexDirection: 'row', backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },

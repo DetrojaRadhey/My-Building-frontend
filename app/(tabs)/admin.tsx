@@ -177,8 +177,13 @@ export default function AdminScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Admin Panel</Text>
-        <Text style={styles.headerSub}>{buildings.length} building{buildings.length !== 1 ? 's' : ''}</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Admin Panel</Text>
+          <Text style={styles.headerSub}>{buildings.length} building{buildings.length !== 1 ? 's' : ''}</Text>
+        </View>
       </View>
 
       {loading ? (
@@ -472,7 +477,8 @@ export default function AdminScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  header: { backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 20, paddingHorizontal: 20 },
+  header: { backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 20, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
   headerSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.text, marginBottom: 12, marginTop: 8 },

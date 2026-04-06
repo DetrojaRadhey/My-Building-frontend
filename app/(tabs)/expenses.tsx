@@ -4,7 +4,7 @@ import {
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
@@ -25,6 +25,7 @@ const CATEGORIES = ['Maintenance', 'Salary', 'Repair', 'Cleaning', 'Security', '
 
 export default function ExpensesScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const isAdmin   = user?.role === 'admin';
   const isPramukh = user?.role === 'pramukh';
   const canManage = isPramukh || isAdmin;
@@ -217,7 +218,10 @@ export default function ExpensesScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Expenses</Text>
           <Text style={styles.headerSub}>Society Fund Tracker</Text>
         </View>

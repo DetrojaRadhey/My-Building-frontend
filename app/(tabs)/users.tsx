@@ -4,6 +4,7 @@ import {
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import api from '../../utils/api';
 import BuildingDropdown from '../../components/BuildingDropdown';
@@ -17,6 +18,7 @@ const ROLE_COLORS: Record<string, string> = {
 
 export default function UsersScreen() {
   const { buildings, loading: buildingsLoading } = useBuildings(true);
+  const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -133,6 +135,9 @@ export default function UsersScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Users</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => setShowAdd(true)}>
           <Ionicons name="person-add" size={20} color={Colors.white} />
@@ -261,6 +266,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   addBtnText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
   filterSection: { backgroundColor: Colors.white, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 8 },

@@ -4,6 +4,7 @@ import {
   TextInput, Alert, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
@@ -26,6 +27,7 @@ function Row({ icon, label, value, mono }: { icon: any; label: string; value: st
 
 export default function BankDetailsScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const isAdmin = user?.role === 'admin';
 
   const { buildings, loading: buildingsLoading } = useBuildings(isAdmin);
@@ -77,6 +79,9 @@ export default function BankDetailsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Bank Details</Text>
         {activeBuildingId && (
           <TouchableOpacity style={styles.editBtn} onPress={() => setEditing(!editing)}>
@@ -154,6 +159,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   editBtnText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
   filterBar: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },

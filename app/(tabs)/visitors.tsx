@@ -4,7 +4,7 @@ import {
   Alert, ActivityIndicator, RefreshControl, Share, Modal, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
@@ -26,6 +26,7 @@ function toLocalDateStr(date: Date) {
 
 export default function VisitorsScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const isAdmin = user?.role === 'admin';
   const isPramukh = user?.role === 'pramukh';
 
@@ -212,6 +213,9 @@ export default function VisitorsScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Visitors</Text>
         <TouchableOpacity style={styles.qrBtn} onPress={shareQR}>
           <Ionicons name="qr-code" size={18} color={Colors.white} />
@@ -314,6 +318,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
   qrBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   qrBtnText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
   filterBar: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },

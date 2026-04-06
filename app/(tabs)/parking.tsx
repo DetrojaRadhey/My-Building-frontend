@@ -4,13 +4,14 @@ import {
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { useBuildings } from '../../hooks/useBuildings';
 import BuildingDropdown from '../../components/BuildingDropdown';
 import type { Building } from '../../hooks/useBuildings';
+import { useActivityLog } from '../../hooks/useActivityLog';
 
 type Tab = 'vehicles' | 'reports';
 
@@ -111,6 +112,7 @@ const ddStyles = StyleSheet.create({
 
 export default function ParkingScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const isAdmin = user?.role === 'admin';
   const params = useLocalSearchParams<{ building_id?: string; building_name?: string }>();
 
@@ -158,7 +160,8 @@ export default function ParkingScreen() {
     }
   };
 
-  useEffect(() => { fetchData(); }, [selectedBuilding]);
+  const { logEvent } = useActivityLog();
+  useEffect(() => { fetchData(); logEvent('open_parking', 'vehicles'); }, [selectedBuilding]);
 
   const addVehicle = async () => {
     if (!vehicleForm.vehicle_number.trim()) return Alert.alert('Error', 'Vehicle number is required');
@@ -300,6 +303,9 @@ export default function ParkingScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Parking</Text>
         <View style={styles.headerActions}>
           {user?.role === 'user' && (
@@ -525,6 +531,7 @@ const styles = StyleSheet.create({
   headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
   headerActions: { flexDirection: 'row', gap: 8 },
   headerBtn: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: 8 },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
   filterBar: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
   tabRow: { flexDirection: 'row', backgroundColor: Colors.white, marginHorizontal: 16, marginTop: 16, borderRadius: 12, padding: 4 },
   tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },

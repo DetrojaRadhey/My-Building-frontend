@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useActivityLog } from '../hooks/useActivityLog';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
@@ -36,6 +37,7 @@ export default function ComplaintsScreen() {
   const isPramukh = user?.role === 'pramukh';
   const isAdmin = user?.role === 'admin';
   const router = useRouter();
+  const { logEvent } = useActivityLog();
   const { mine, view } = useLocalSearchParams<{ mine?: string; view?: string }>();
 
   // Routing logic:
@@ -70,7 +72,10 @@ export default function ComplaintsScreen() {
   const [updateForm, setUpdateForm] = useState({ status: 'open', remark: '' });
   const [updating, setUpdating] = useState(false);
 
-  useFocusEffect(useCallback(() => { fetchComplaints(); }, []));
+  useFocusEffect(useCallback(() => {
+    fetchComplaints();
+    logEvent(isMyView ? 'open_my_complaints' : 'open_society_complaints', 'complaints');
+  }, []));
 
   const fetchComplaints = async () => {
     if (!user?.building_id) {
@@ -117,10 +122,12 @@ export default function ComplaintsScreen() {
     setSubmitting(true);
     try {
       await api.post('/complaints', form);
+      logEvent('complaint_submitted', 'complaints', { title: form.title, category: form.category });
       resetForm(); setShowAdd(false);
       fetchComplaints();
       Alert.alert('Submitted', 'Your complaint has been submitted.');
     } catch (e: any) {
+      logEvent('complaint_submit_failed', 'complaints', { title: form.title, error: e.response?.data?.error });
       Alert.alert('Error', e.response?.data?.error || 'Failed to submit');
     } finally { setSubmitting(false); }
   };
@@ -136,6 +143,11 @@ export default function ComplaintsScreen() {
     setUpdating(true);
     try {
       await api.patch(`/complaints/${selectedComplaint.id}/status`, updateForm);
+      logEvent('complaint_status_updated', 'complaints', {
+        complaint_id: selectedComplaint.id,
+        new_status: updateForm.status,
+        remark: updateForm.remark || undefined,
+      });
       setShowUpdate(false); fetchComplaints();
     } catch (e: any) {
       Alert.alert('Error', e.response?.data?.error || 'Failed to update');

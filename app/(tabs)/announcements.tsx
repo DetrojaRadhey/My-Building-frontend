@@ -4,7 +4,7 @@ import {
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
@@ -14,6 +14,7 @@ import { useMarkNotificationsRead } from '../../hooks/useMarkNotificationsRead';
 
 export default function AnnouncementsScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const isAdmin = user?.role === 'admin';
 
   useMarkNotificationsRead(['announcement']);
@@ -91,6 +92,9 @@ export default function AnnouncementsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Announcements</Text>
         {canPost && (
           <TouchableOpacity style={styles.addBtn} onPress={() => setShowAdd(true)}>
@@ -159,6 +163,7 @@ const styles = StyleSheet.create({
   header: { backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
   addBtn: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: 8 },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
   filterBar: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
   card: { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
   urgentCard: { borderLeftWidth: 4, borderLeftColor: Colors.danger },

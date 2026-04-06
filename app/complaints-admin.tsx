@@ -4,7 +4,7 @@ import {
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../constants/colors';
 import api from '../utils/api';
@@ -31,6 +31,7 @@ const SECTION_ORDER = ['open', 'in_progress', 'resolved'];
 
 export default function AdminComplaintsScreen() {
   const { buildings } = useBuildings(true);
+  const router = useRouter();
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [complaints, setComplaints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -247,7 +248,10 @@ export default function AdminComplaintsScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Complaints</Text>
           <Text style={styles.headerSub}>{complaints.length} total complaint{complaints.length !== 1 ? 's' : ''}</Text>
         </View>
@@ -543,6 +547,7 @@ const styles = StyleSheet.create({
     paddingTop: 54, paddingBottom: 20, paddingHorizontal: 20,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
   headerTitle: { fontSize: 24, fontWeight: '800', color: Colors.white },
   headerSub: { fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
   addBtn: {
