@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Modal, TextInput, Alert, ActivityIndicator, RefreshControl, ScrollView,
@@ -6,7 +7,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
-import { Colors } from '../constants/colors';
 import api from '../utils/api';
 
 const VEHICLE_RE = /^[A-Z]{2}\d{2}[A-Z]{1,3}\d{4}$/;
@@ -61,6 +61,8 @@ export default function MyVehiclesScreen() {
       }},
     ]);
   };
+
+  
 
   return (
     <View style={s.container}>
@@ -148,7 +150,7 @@ export default function MyVehiclesScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },

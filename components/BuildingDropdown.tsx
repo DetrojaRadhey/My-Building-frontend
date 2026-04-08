@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import { Colors } from '../constants/colors';
 import { View, Text, TouchableOpacity, Modal, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../constants/colors';
 import { Building } from '../hooks/useBuildings';
 
 type Props = {
@@ -14,6 +14,7 @@ type Props = {
 
 export default function BuildingDropdown({ buildings, loading, selected, onSelect, label = 'Select Building *' }: Props) {
   const [open, setOpen] = useState(false);
+  
 
   return (
     <View>

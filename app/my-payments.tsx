@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, RefreshControl, Alert,
@@ -9,7 +10,6 @@ import { useFocusEffect } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Colors } from '../constants/colors';
 import api from '../utils/api';
 import { API_BASE } from '../constants/api';
 import * as WebBrowser from 'expo-web-browser';
@@ -85,6 +85,8 @@ export default function MyPaymentsScreen() {
 
   const totalPaid = payments.filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.amount), 0);
   const totalPending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.amount), 0);
+
+  
 
   return (
     <View style={s.container}>
@@ -195,7 +197,7 @@ export default function MyPaymentsScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },

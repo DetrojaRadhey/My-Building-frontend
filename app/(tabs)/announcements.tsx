@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import BuildingDropdown from '../../components/BuildingDropdown';
@@ -17,7 +17,7 @@ export default function AnnouncementsScreen() {
   const router = useRouter();
   const isAdmin = user?.role === 'admin';
 
-  useMarkNotificationsRead(['announcement']);
+  useMarkNotificationsRead(['announcement', 'announcement_urgent']);
   const canPost = user?.role === 'pramukh' || isAdmin;
   const params = useLocalSearchParams<{ building_id?: string; building_name?: string }>();
 
@@ -36,6 +36,8 @@ export default function AnnouncementsScreen() {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ title: '', body: '', priority: 'normal' });
   const [submitting, setSubmitting] = useState(false);
+
+  
 
   const fetchAnnouncements = async () => {
     try {
@@ -96,10 +98,12 @@ export default function AnnouncementsScreen() {
           <Ionicons name="arrow-back" size={22} color={Colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Announcements</Text>
-        {canPost && (
+        {canPost ? (
           <TouchableOpacity style={styles.addBtn} onPress={() => setShowAdd(true)}>
             <Ionicons name="add" size={22} color={Colors.white} />
           </TouchableOpacity>
+        ) : (
+          <View style={{ width: 36 }} />
         )}
       </View>
 
@@ -161,9 +165,9 @@ export default function AnnouncementsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
+  headerTitle: { flex: 1, color: Colors.white, fontSize: 22, fontWeight: '800', textAlign: 'center' },
   addBtn: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: 8 },
-  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
   filterBar: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
   card: { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
   urgentCard: { borderLeftWidth: 4, borderLeftColor: Colors.danger },

@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Modal, TextInput, Alert, ActivityIndicator, RefreshControl, Linking,
@@ -6,7 +7,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
-import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import BuildingDropdown from '../components/BuildingDropdown';
@@ -67,6 +67,9 @@ export default function HelplineScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [form, setForm] = useState({ profession: '', name: '', phone: '' });
+  const [editItem, setEditItem] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ profession: '', name: '', phone: '' });
+  const [showEditSuggestions, setShowEditSuggestions] = useState(false);
 
   const activeBuildingId = isAdmin ? selectedBuilding?.id : user?.building_id;
 
@@ -102,6 +105,22 @@ export default function HelplineScreen() {
       fetchHelplines();
     } catch (e: any) {
       Alert.alert('Error', e.response?.data?.error || 'Failed to add');
+    } finally { setSubmitting(false); }
+  };
+
+  const updateHelpline = async () => {
+    if (!editItem) return;
+    if (!editForm.profession.trim() || !editForm.name.trim() || !editForm.phone.trim())
+      return Alert.alert('Error', 'All fields are required');
+    if (!PHONE_RE.test(editForm.phone.trim()))
+      return Alert.alert('Invalid Phone', 'Enter a valid 10-digit Indian mobile number');
+    setSubmitting(true);
+    try {
+      await api.patch(`/helpline/${editItem.id}`, editForm);
+      setEditItem(null);
+      fetchHelplines();
+    } catch (e: any) {
+      Alert.alert('Error', e.response?.data?.error || 'Failed to update');
     } finally { setSubmitting(false); }
   };
 
@@ -151,6 +170,11 @@ export default function HelplineScreen() {
             <Ionicons name="call" size={18} color={Colors.success} />
           </TouchableOpacity>
           {canManage && (
+            <TouchableOpacity style={[styles.callBtn, { backgroundColor: Colors.primary + '15' }]} onPress={() => { setEditItem(item); setEditForm({ profession: item.profession, name: item.name, phone: item.phone }); }}>
+              <Ionicons name="pencil-outline" size={18} color={Colors.primary} />
+            </TouchableOpacity>
+          )}
+          {canManage && (
             <TouchableOpacity style={[styles.callBtn, { backgroundColor: Colors.danger + '15' }]} onPress={() => deleteHelpline(item.id, item.name)}>
               <Ionicons name="trash-outline" size={18} color={Colors.danger} />
             </TouchableOpacity>
@@ -161,6 +185,8 @@ export default function HelplineScreen() {
   };
 
   const flatData = helplines;
+
+  
 
   return (
     <View style={styles.container}>
@@ -270,6 +296,66 @@ export default function HelplineScreen() {
                 keyExtractor={i => i}
                 renderItem={({ item }) => (
                   <TouchableOpacity style={styles.pickerItem} onPress={() => { setForm(f => ({ ...f, profession: item })); setShowSuggestions(false); }}>
+                    <Ionicons name={getProfessionIcon(item) as any} size={18} color={getProfessionColor(item)} />
+                    <Text style={styles.pickerItemText}>{item}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </View>
+        </Modal>
+      </Modal>
+      {/* Edit Modal */}
+      <Modal visible={!!editItem} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Edit Helpline Number</Text>
+            <TouchableOpacity onPress={() => setEditItem(null)}>
+              <Ionicons name="close" size={24} color={Colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.label}>Profession *</Text>
+          <TouchableOpacity style={styles.select} onPress={() => setShowEditSuggestions(true)}>
+            <Text style={[styles.selectText, !editForm.profession && { color: Colors.textMuted }]}>
+              {editForm.profession || 'Select or type profession'}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={editForm.profession}
+            onChangeText={v => setEditForm(f => ({ ...f, profession: v }))}
+            placeholder="Or type custom profession"
+            placeholderTextColor={Colors.textMuted}
+          />
+
+          <Text style={styles.label}>Name *</Text>
+          <TextInput style={styles.input} value={editForm.name} onChangeText={v => setEditForm(f => ({ ...f, name: v }))} placeholder="e.g. Ramesh Kumar" placeholderTextColor={Colors.textMuted} />
+
+          <Text style={styles.label}>Phone Number *</Text>
+          <TextInput style={styles.input} value={editForm.phone} onChangeText={v => setEditForm(f => ({ ...f, phone: v }))} placeholder="e.g. 9876543210" keyboardType="phone-pad" maxLength={15} placeholderTextColor={Colors.textMuted} />
+
+          <TouchableOpacity style={[styles.submitBtn, { backgroundColor: Colors.primary }]} onPress={updateHelpline} disabled={submitting}>
+            {submitting ? <ActivityIndicator color={Colors.white} /> : <Text style={styles.submitBtnText}>Save Changes</Text>}
+          </TouchableOpacity>
+        </View>
+
+        {/* Profession picker for edit */}
+        <Modal visible={showEditSuggestions} transparent animationType="slide">
+          <View style={styles.pickerOverlay}>
+            <View style={styles.pickerSheet}>
+              <View style={styles.pickerHeader}>
+                <Text style={styles.pickerTitle}>Select Profession</Text>
+                <TouchableOpacity onPress={() => setShowEditSuggestions(false)}>
+                  <Ionicons name="close" size={22} color={Colors.text} />
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={PROFESSION_SUGGESTIONS}
+                keyExtractor={i => i}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={styles.pickerItem} onPress={() => { setEditForm(f => ({ ...f, profession: item })); setShowEditSuggestions(false); }}>
                     <Ionicons name={getProfessionIcon(item) as any} size={18} color={getProfessionColor(item)} />
                     <Text style={styles.pickerItemText}>{item}</Text>
                   </TouchableOpacity>

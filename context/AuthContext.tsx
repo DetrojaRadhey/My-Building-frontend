@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { API_BASE } from '../constants/api';
+import { registerAuthFailureHandler } from '../utils/api';
 
 type User = {
   id: string;
@@ -125,6 +126,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setSubscription(null);
   };
+
+  // Wire up the API interceptor so 401/403 auto-triggers logout
+  useEffect(() => {
+    registerAuthFailureHandler(() => {
+      setToken(null);
+      setUser(null);
+      setSubscription(null);
+    });
+  }, []);
 
   const refreshSubscription = async () => {
     const t = token || (await AsyncStorage.getItem('token'));

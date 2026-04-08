@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert,
   ActivityIndicator, ScrollView, Linking, TextInput,
@@ -6,50 +7,48 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import { API_BASE } from '../constants/api';
-
-const PLANS = [
-  {
-    key: 'monthly',
-    title: 'Monthly Plan',
-    price: '₹15',
-    period: '/ month',
-    desc: 'Billed every month. Cancel anytime.',
-    icon: 'calendar-outline' as const,
-    color: Colors.primary,
-    features: ['Full access to all modules', 'Maintenance billing & payments', 'Visitor management', 'Complaints & announcements'],
-  },
-  {
-    key: 'yearly',
-    title: 'Yearly Plan',
-    price: '₹180',
-    period: '/ year',
-    desc: 'Billed annually. No monthly hassle.',
-    icon: 'star-outline' as const,
-    color: '#F59E0B',
-    highlight: false,
-    features: ['Everything in Monthly', 'Save ₹30 per year', 'No monthly hassle', 'All modules included'],
-  },
-  {
-    key: 'lifetime',
-    title: 'Lifetime Plan',
-    price: '₹1,500',
-    period: 'one-time',
-    desc: 'Pay once, use forever. Best value.',
-    icon: 'infinite-outline' as const,
-    color: Colors.success,
-    highlight: true,
-    features: ['Everything in Yearly', 'No recurring charges', 'Priority support', 'All future features included'],
-  },
-];
 
 // Plan rank — higher = better. User can only subscribe to a plan strictly higher than current.
 const PLAN_RANK: Record<string, number> = { monthly: 1, yearly: 2, lifetime: 3 };
 
 export default function SubscribeScreen() {
+  const PLANS = [
+    {
+      key: 'monthly',
+      title: 'Monthly Plan',
+      price: '₹15',
+      period: '/ month',
+      desc: 'Billed every month. Cancel anytime.',
+      icon: 'calendar-outline' as const,
+      color: Colors.primary,
+      features: ['Full access to all modules', 'Maintenance billing & payments', 'Visitor management', 'Complaints & announcements'],
+    },
+    {
+      key: 'yearly',
+      title: 'Yearly Plan',
+      price: '₹180',
+      period: '/ year',
+      desc: 'Billed annually. No monthly hassle.',
+      icon: 'star-outline' as const,
+      color: '#F59E0B',
+      highlight: false,
+      features: ['Everything in Monthly', 'Save ₹30 per year', 'No monthly hassle', 'All modules included'],
+    },
+    {
+      key: 'lifetime',
+      title: 'Lifetime Plan',
+      price: '₹1,500',
+      period: 'one-time',
+      desc: 'Pay once, use forever. Best value.',
+      icon: 'infinite-outline' as const,
+      color: Colors.success,
+      highlight: true,
+      features: ['Everything in Yearly', 'No recurring charges', 'Priority support', 'All future features included'],
+    },
+  ];
   const { user, subscription, hasActiveSubscription, refreshSubscription } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<'my-plan' | 'explore'>(hasActiveSubscription ? 'my-plan' : 'explore');
@@ -118,6 +117,8 @@ export default function SubscribeScreen() {
   const planPrice = isLifetime ? '₹1,500' : isYearly ? '₹180/yr' : '₹15/mo';
   const planIcon  = isLifetime ? 'infinite-outline' : isYearly ? 'star-outline' : 'calendar-outline';
   const planColor = isLifetime ? Colors.success : isYearly ? '#F59E0B' : Colors.primary;
+
+  
 
   return (
     <View style={s.container}>
@@ -330,7 +331,7 @@ export default function SubscribeScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { backgroundColor: Colors.primary, paddingTop: 52, paddingBottom: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },

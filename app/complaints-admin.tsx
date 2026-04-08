@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, SectionList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView, Image,
@@ -6,7 +7,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors } from '../constants/colors';
 import api from '../utils/api';
 import BuildingDropdown from '../components/BuildingDropdown';
 import type { Building } from '../hooks/useBuildings';
@@ -243,6 +243,8 @@ export default function AdminComplaintsScreen() {
       </View>
     </>
   );
+
+  
 
   return (
     <View style={styles.container}>
@@ -530,6 +532,7 @@ export default function AdminComplaintsScreen() {
 }
 
 function SummaryCard({ count, label, color, icon }: { count: number; label: string; color: string; icon: string }) {
+  
   return (
     <View style={[styles.summaryCard, { borderTopColor: color }]}>
       <Ionicons name={icon as any} size={20} color={color} />

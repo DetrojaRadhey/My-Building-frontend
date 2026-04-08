@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Modal, ScrollView, Alert, ActivityIndicator, RefreshControl, TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../constants/colors';
 import api from '../utils/api';
 
-const PLAN_COLOR: Record<string, string> = { monthly: Colors.primary, yearly: '#F59E0B', lifetime: Colors.success };
-const STATUS_COLOR: Record<string, string> = { active: Colors.success, expired: Colors.warning, cancelled: Colors.danger };
-
 export default function SubscriptionsAdminScreen() {
+  const PLAN_COLOR: Record<string, string> = { monthly: Colors.primary, yearly: '#F59E0B', lifetime: Colors.success };
+  const STATUS_COLOR: Record<string, string> = { active: Colors.success, expired: Colors.warning, cancelled: Colors.danger };
   const router = useRouter();
   const [subs, setSubs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,6 +102,8 @@ export default function SubscriptionsAdminScreen() {
       ) : null}
     </TouchableOpacity>
   );
+
+  
 
   return (
     <View style={styles.container}>

@@ -120,6 +120,8 @@ export default function PromosScreen() {
     );
   };
 
+  
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>

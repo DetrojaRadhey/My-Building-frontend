@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { LanguageProvider } from '../context/LanguageContext';
 import { ActivityIndicator, View } from 'react-native';
 import { Colors } from '../constants/colors';
 import NoInternetOverlay from '../components/NoInternetOverlay';
@@ -13,11 +14,8 @@ function RootNavigator() {
   useEffect(() => {
     if (loading) return;
     const inAuth = (segments[0] as string) === '(auth)';
-    if (!user && !inAuth) {
-      router.replace('/(auth)/login' as any);
-    } else if (user && inAuth) {
-      router.replace('/' as any);
-    }
+    if (!user && !inAuth) router.replace('/(auth)/login' as any);
+    else if (user && inAuth) router.replace('/' as any);
   }, [user, loading]);
 
   if (loading) {
@@ -45,9 +43,11 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootNavigator />
-      <NoInternetOverlay />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <RootNavigator />
+        <NoInternetOverlay />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

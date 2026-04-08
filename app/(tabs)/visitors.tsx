@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Alert, ActivityIndicator, RefreshControl, Share, Modal, ScrollView,
+  Alert, ActivityIndicator, RefreshControl, Share, Modal, ScrollView, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { ENTRY_BASE } from '../../constants/api';
@@ -209,6 +209,8 @@ export default function VisitorsScreen() {
     return d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   })();
 
+  
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -276,10 +278,22 @@ export default function VisitorsScreen() {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setDetailItem(null)}>
           <TouchableOpacity activeOpacity={1} style={styles.modalSheet}>
             <View style={styles.modalHandle} />
+
+            {/* Visitor photo */}
+            {detailItem?.photo_url ? (
+              <Image
+                source={{ uri: detailItem.photo_url }}
+                style={styles.modalPhoto}
+                resizeMode="cover"
+              />
+            ) : null}
+
             <View style={styles.modalAvatarRow}>
-              <View style={styles.modalAvatar}>
-                <Text style={styles.modalAvatarText}>{detailItem?.name?.[0]?.toUpperCase()}</Text>
-              </View>
+              {!detailItem?.photo_url && (
+                <View style={styles.modalAvatar}>
+                  <Text style={styles.modalAvatarText}>{detailItem?.name?.[0]?.toUpperCase()}</Text>
+                </View>
+              )}
               <View style={{ flex: 1 }}>
                 <Text style={styles.modalName}>{detailItem?.name}</Text>
                 <Text style={styles.modalSub}>Visitor Details</Text>
@@ -295,7 +309,6 @@ export default function VisitorsScreen() {
               { icon: 'briefcase-outline', label: 'Purpose', value: detailItem?.purpose || detailItem?.work_detail },
               { icon: 'calendar-outline', label: 'Date', value: detailItem ? new Date(detailItem.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '' },
               { icon: 'time-outline', label: 'Time', value: detailItem ? new Date(detailItem.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '' },
-              { icon: 'enter-outline', label: 'Entry Type', value: detailItem?.entry_type },
             ].filter((r) => r.value).map((row) => (
               <View key={row.label} style={styles.modalRow}>
                 <View style={styles.modalRowIcon}>
@@ -361,6 +374,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   modalSheet: { backgroundColor: Colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: 20 },
+  modalPhoto: { width: '100%', height: 200, borderRadius: 14, marginBottom: 16 },
   modalAvatarRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 20 },
   modalAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.primary + '20', justifyContent: 'center', alignItems: 'center' },
   modalAvatarText: { fontSize: 24, fontWeight: '800', color: Colors.primary },

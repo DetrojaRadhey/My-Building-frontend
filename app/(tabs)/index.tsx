@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { Colors } from '../../constants/colors';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/colors';
+import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { useActivityLog } from '../../hooks/useActivityLog';
@@ -22,6 +23,7 @@ const TYPE_TO_ROUTE: Record<string, string> = {
   reminder: '/maintenance',
   visitor: '/visitors',
   announcement: '/announcements',
+  announcement_urgent: '/announcements_urgent',
   meeting: '/meetings',
   join_request: '/join-requests',
   join_response: '/join-requests',
@@ -29,12 +31,14 @@ const TYPE_TO_ROUTE: Record<string, string> = {
 };
 
 export default function HomeScreen() {
+  const { t } = useLanguage();
   const { user, hasActiveSubscription } = useAuth();
   const router = useRouter();
   const { logEvent } = useActivityLog();
-  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
+  const [urgentAnnouncements, setUrgentAnnouncements] = useState<any[]>([]);
+  const [showUrgentModal, setShowUrgentModal] = useState(false);
 
   const isPendingUser = user?.role === 'user' && !user?.building_id;
   const needsSubscription = user?.role !== 'admin' && !hasActiveSubscription;
@@ -56,27 +60,27 @@ export default function HomeScreen() {
   };
 
   const allModules = [
-    { title: 'My Details', icon: 'person-circle', color: '#1E3A8A', route: '/my-details', userPramukhOnly: true },
-    { title: 'Members', icon: 'people-circle', color: '#0891B2', route: '/members', userPramukhOnly: true },
-    { title: 'Expenses', icon: 'wallet', color: '#7C3AED', route: '/expenses' },
-    { title: 'Maintenance', icon: 'wallet', color: '#10B981', route: '/maintenance' },
-    { title: 'Announcements', icon: 'megaphone', color: '#F59E0B', route: '/announcements' },
-    { title: 'Visitors', icon: 'people', color: '#6366F1', route: '/visitors' },
-    { title: 'Parking', icon: 'car', color: '#0EA5E9', route: '/parking' },
-    { title: 'Group Chat', icon: 'chatbubbles', color: '#EC4899', route: '/chat', hideForAdmin: true },
-    { title: 'Complaints', icon: 'warning', color: '#EF4444', route: '/complaints?view=society', userPramukhOnly: true },
-    { title: 'Join Requests', icon: 'person-add', color: '#059669', route: '/join-requests', pramukhOnly: true },
-    { title: 'Helpline', icon: 'call', color: '#EF4444', route: '/helpline', hideForAdmin: true },
-    { title: 'Subscription', icon: 'card', color: '#F59E0B', route: '/subscribe', hideForAdmin: true },
-    { title: 'Bank Details', icon: 'business', color: '#7C3AED', route: '/bank-details', adminOnly: true },
-    { title: 'Admin Panel', icon: 'shield-checkmark', color: '#7C3AED', route: '/admin', adminOnly: true },
-    { title: 'Users', icon: 'people', color: '#0F766E', route: '/users', adminOnly: true },
-    { title: 'Inquiries', icon: 'mail-open', color: '#0891B2', route: '/inquiries', adminOnly: true },
-    { title: 'Complaints', icon: 'warning', color: '#EF4444', route: '/complaints-admin', adminOnly: true },
-    { title: 'Helpline', icon: 'call', color: '#EF4444', route: '/helpline', adminOnly: true },
-    { title: 'Subscriptions', icon: 'card', color: '#7C3AED', route: '/subscriptions-admin', adminOnly: true },
-    { title: 'Promo Codes', icon: 'pricetag', color: '#EC4899', route: '/promos', adminOnly: true },
-    { title: 'Activity Logs', icon: 'list-circle', color: '#475569', route: '/activity-logs', adminOnly: true },
+    { titleKey: 'myDetails', icon: 'person-circle', color: '#1E3A8A', route: '/my-details', userPramukhOnly: true },
+    { titleKey: 'members', icon: 'people-circle', color: '#0891B2', route: '/members', userPramukhOnly: true },
+    { titleKey: 'expenses', icon: 'wallet', color: '#7C3AED', route: '/expenses' },
+    { titleKey: 'maintenance', icon: 'wallet', color: '#10B981', route: '/maintenance' },
+    { titleKey: 'announcements', icon: 'megaphone', color: '#F59E0B', route: '/announcements' },
+    { titleKey: 'visitors', icon: 'people', color: '#6366F1', route: '/visitors' },
+    { titleKey: 'parking', icon: 'car', color: '#0EA5E9', route: '/parking' },
+    { titleKey: 'groupChat', icon: 'chatbubbles', color: '#EC4899', route: '/chat', hideForAdmin: true },
+    { titleKey: 'complaints', icon: 'warning', color: '#EF4444', route: '/complaints?view=society', userPramukhOnly: true },
+    { titleKey: 'joinRequests', icon: 'person-add', color: '#059669', route: '/join-requests', pramukhOnly: true },
+    { titleKey: 'helpline', icon: 'call', color: '#EF4444', route: '/helpline', hideForAdmin: true },
+    { titleKey: 'subscription', icon: 'card', color: '#F59E0B', route: '/subscribe', hideForAdmin: true },
+    { titleKey: 'bankDetails', icon: 'business', color: '#7C3AED', route: '/bank-details', adminOnly: true },
+    { titleKey: 'adminPanel', icon: 'shield-checkmark', color: '#7C3AED', route: '/admin', adminOnly: true },
+    { titleKey: 'users', icon: 'people', color: '#0F766E', route: '/users', adminOnly: true },
+    { titleKey: 'inquiries', icon: 'mail-open', color: '#0891B2', route: '/inquiries', adminOnly: true },
+    { titleKey: 'complaints', icon: 'warning', color: '#EF4444', route: '/complaints-admin', adminOnly: true },
+    { titleKey: 'helpline', icon: 'call', color: '#EF4444', route: '/helpline', adminOnly: true },
+    { titleKey: 'subscriptions', icon: 'card', color: '#7C3AED', route: '/subscriptions-admin', adminOnly: true },
+    { titleKey: 'promoCodes', icon: 'pricetag', color: '#EC4899', route: '/promos', adminOnly: true },
+    { titleKey: 'activityLogs', icon: 'list-circle', color: '#475569', route: '/activity-logs', adminOnly: true },
   ];
 
   const modules = allModules.filter((m: any) => {
@@ -86,28 +90,49 @@ export default function HomeScreen() {
     if (m.pramukhOnly && user?.role !== 'pramukh') return false;
     if (m.hideIfSubscribed && hasActiveSubscription) return false;
     return true;
-  });
+  }).map(m => ({ ...m, title: t(m.titleKey) }));
 
   const fetchData = async () => {
+    // kept for pull-to-refresh compatibility
+  };
+
+  const openUrgentInbox = async () => {
+    // Immediately delete the urgent notifications from DB — one-time read
+    api.delete('/notifications/dismiss-types', { data: { types: ['announcement_urgent'] } }).catch(() => {});
+    // Clear badge locally right away
+    setBadgeCounts(prev => ({ ...prev, '/announcements_urgent': 0 }));
+
     try {
-      if (user?.building_id) {
-        const res = await api.get('/announcements');
-        setAnnouncements(res.data.slice(0, 3));
-      }
-    } catch {}
+      const res = await api.get('/announcements');
+      const urgent = (res.data as any[]).filter((a: any) => a.priority === 'urgent');
+      setUrgentAnnouncements(urgent);
+    } catch {
+      setUrgentAnnouncements([]);
+    }
+    setShowUrgentModal(true);
+  };
+
+  const dismissUrgentInbox = () => {
+    setShowUrgentModal(false);
+    setUrgentAnnouncements([]);
   };
 
   const fetchBadges = useCallback(async () => {
     if (!user?.building_id && user?.role !== 'admin') return;
     try {
       const res = await api.get('/notifications/unread-counts');
-      // Aggregate counts by route
       const routeCounts: Record<string, number> = {};
       for (const [type, count] of Object.entries(res.data as Record<string, number>)) {
         const route = TYPE_TO_ROUTE[type];
         if (route) routeCounts[route] = (routeCounts[route] || 0) + count;
       }
-      setBadgeCounts(routeCounts);
+      // Never restore urgent badge once cleared — it was already deleted from DB
+      routeCounts['/announcements_urgent'] = routeCounts['/announcements_urgent'] || 0;
+      setBadgeCounts(prev => ({
+        ...routeCounts,
+        // Keep urgent at 0 if we already dismissed it this session
+        '/announcements_urgent': prev['/announcements_urgent'] === 0 ? 0 : (routeCounts['/announcements_urgent'] || 0),
+      }));
     } catch {}
   }, [user]);
 
@@ -120,12 +145,14 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  
+
   if (isPendingUser) {
     return (
       <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Welcome,</Text>
+            <Text style={styles.greeting}>{t('welcome')}</Text>
             <Text style={styles.name}>{user?.name} 👋</Text>
             <View style={styles.badge}><Text style={styles.badgeText}>USER</Text></View>
           </View>
@@ -151,19 +178,32 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+    <View style={styles.container}>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Good day,</Text>
+          <Text style={styles.greeting}>{t('goodDay')}</Text>
           <Text style={styles.name}>{user?.name} 👋</Text>
           <View style={styles.badge}><Text style={styles.badgeText}>{user?.role?.toUpperCase()}</Text></View>
         </View>
-        <TouchableOpacity onPress={() => router.push('/profile' as any)} style={styles.avatar}>
-          <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={openUrgentInbox} style={styles.inboxBtn}>
+            <Ionicons name="notifications-outline" size={22} color={Colors.white} />
+            {(badgeCounts['/announcements_urgent'] || 0) > 0 && (
+              <View style={styles.inboxBadge}>
+                <Text style={styles.inboxBadgeText}>
+                  {(badgeCounts['/announcements_urgent'] || 0) > 99 ? '99+' : badgeCounts['/announcements_urgent']}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/profile' as any)} style={styles.avatar}>
+            <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Modules</Text>
+      <Text style={styles.sectionTitle}>{t('modules')}</Text>
       <View style={styles.grid}>
         {modules.map((m) => {
           const count = badgeCounts[m.route] || 0;
@@ -191,25 +231,46 @@ export default function HomeScreen() {
         })}
       </View>
 
-      {announcements.length > 0 && (
-        <>
-          <Text style={styles.sectionTitle}>Recent Announcements</Text>
-          {announcements.map((a) => (
-            <View key={a.id} style={[styles.announcementCard, a.priority === 'urgent' && styles.urgentCard]}>
-              <View style={styles.announcementRow}>
-                <Text style={styles.announcementIcon}>{a.priority === 'urgent' ? '🚨' : '📢'}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.announcementTitle}>{a.title}</Text>
-                  <Text style={styles.announcementBody} numberOfLines={2}>{a.body}</Text>
-                </View>
-              </View>
-            </View>
-          ))}
-        </>
-      )}
-
       <View style={{ height: 20 }} />
     </ScrollView>
+
+    {/* Urgent Announcements Modal */}
+    <Modal visible={showUrgentModal} transparent animationType="slide" onRequestClose={dismissUrgentInbox}>
+      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={dismissUrgentInbox}>
+        <TouchableOpacity activeOpacity={1} style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
+          <View style={styles.modalTitleRow}>
+            <Text style={styles.modalTitle}>🚨 Urgent Announcements</Text>
+            <TouchableOpacity onPress={dismissUrgentInbox}>
+              <Ionicons name="close-circle" size={26} color={Colors.border} />
+            </TouchableOpacity>
+          </View>
+          {urgentAnnouncements.length === 0 ? (
+            <View style={styles.modalEmpty}>
+              <Ionicons name="checkmark-circle-outline" size={44} color={Colors.success} />
+              <Text style={styles.modalEmptyText}>No urgent announcements</Text>
+            </View>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {urgentAnnouncements.map((a) => (
+                <View key={a.id} style={styles.urgentCard}>
+                  <View style={styles.urgentCardTop}>
+                    <Text style={styles.urgentCardTitle}>{a.title}</Text>
+                    <View style={styles.urgentBadge}><Text style={styles.urgentBadgeText}>URGENT</Text></View>
+                  </View>
+                  <Text style={styles.urgentCardBody}>{a.body}</Text>
+                  <Text style={styles.urgentCardMeta}>
+                    {a.users?.name} · {new Date(a.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </Text>
+                </View>
+              ))}
+              <View style={{ height: 20 }} />
+            </ScrollView>
+          )}
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+    </View>
   );
 }
 
@@ -222,6 +283,10 @@ const styles = StyleSheet.create({
   badgeText: { color: Colors.white, fontSize: 11, fontWeight: '700' },
   avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.accent, justifyContent: 'center', alignItems: 'center' },
   avatarText: { color: Colors.white, fontSize: 20, fontWeight: '800' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  inboxBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  inboxBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: Colors.danger, borderRadius: 9, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, borderWidth: 2, borderColor: Colors.primary },
+  inboxBadgeText: { color: Colors.white, fontSize: 9, fontWeight: '800' },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.text, marginHorizontal: 16, marginTop: 24, marginBottom: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12 },
   moduleCard: { width: '30%', margin: '1.5%', backgroundColor: Colors.white, borderRadius: 16, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
@@ -231,12 +296,6 @@ const styles = StyleSheet.create({
   lockBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: Colors.textMuted, borderRadius: 8, width: 16, height: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: Colors.white },
   notifBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: Colors.danger, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: Colors.white },
   notifBadgeText: { color: Colors.white, fontSize: 10, fontWeight: '800' },
-  announcementCard: { marginHorizontal: 16, marginBottom: 10, backgroundColor: Colors.white, borderRadius: 12, padding: 14, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
-  urgentCard: { borderLeftWidth: 4, borderLeftColor: Colors.danger },
-  announcementRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  announcementIcon: { fontSize: 20 },
-  announcementTitle: { fontSize: 14, fontWeight: '700', color: Colors.text },
-  announcementBody: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
   pendingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, marginTop: 40 },
   pendingTitle: { fontSize: 20, fontWeight: '800', color: Colors.text, textAlign: 'center', marginBottom: 10 },
   pendingSubtitle: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
@@ -244,4 +303,19 @@ const styles = StyleSheet.create({
   joinBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
   registerBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: Colors.primary, borderRadius: 14, paddingHorizontal: 28, paddingVertical: 14, marginTop: 12 },
   registerBtnText: { color: Colors.primary, fontSize: 16, fontWeight: '700' },
+  // Urgent inbox modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: Colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36, maxHeight: '75%' },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: 16 },
+  modalTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 17, fontWeight: '800', color: Colors.text },
+  modalEmpty: { alignItems: 'center', paddingVertical: 32, gap: 10 },
+  modalEmptyText: { fontSize: 15, color: Colors.textMuted },
+  urgentCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, marginBottom: 10, borderLeftWidth: 4, borderLeftColor: Colors.danger },
+  urgentCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  urgentCardTitle: { fontSize: 15, fontWeight: '700', color: Colors.text, flex: 1, marginRight: 8 },
+  urgentBadge: { backgroundColor: Colors.danger, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+  urgentBadgeText: { color: Colors.white, fontSize: 10, fontWeight: '800' },
+  urgentCardBody: { fontSize: 14, color: Colors.text, lineHeight: 20, marginBottom: 6 },
+  urgentCardMeta: { fontSize: 12, color: Colors.textMuted },
 });

@@ -1,34 +1,38 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { LANGUAGES } from '../../constants/translations';
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const { t, language, setLanguage } = useLanguage();
   const router = useRouter();
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const isAdmin = user?.role === 'admin';
   const isPramukh = user?.role === 'pramukh';
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: logout },
+    Alert.alert(t('logout'), t('logoutConfirm'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('logout'), style: 'destructive', onPress: logout },
     ]);
   };
 
   const roleColor = isAdmin ? Colors.danger : isPramukh ? Colors.accent : Colors.success;
+  const currentLang = LANGUAGES.find(l => l.code === language)!;
 
   const menuItems = isAdmin ? [] : [
-    { icon: 'warning-outline', label: 'My Complaints', onPress: () => router.push('/complaints?mine=true' as any) },
-    { icon: 'car-outline', label: 'My Vehicles', onPress: () => router.push('/my-vehicles' as any) },
-    { icon: 'wallet-outline', label: 'Payment History', onPress: () => router.push('/my-payments' as any) },
+    { icon: 'warning-outline', label: t('myComplaints'), onPress: () => router.push('/complaints?mine=true' as any) },
+    { icon: 'car-outline', label: t('myVehicles'), onPress: () => router.push('/my-vehicles' as any) },
+    { icon: 'wallet-outline', label: t('paymentHistory'), onPress: () => router.push('/my-payments' as any) },
   ];
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.avatarLarge}>
           <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
@@ -40,34 +44,31 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Building ID for pramukh */}
       {user?.building_id && isPramukh ? (
-        <View style={styles.infoSection}>
+        <View style={styles.section}>
           <View style={styles.infoCard}>
             <Ionicons name="business" size={20} color={Colors.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.infoLabel}>Building ID — share with residents</Text>
+              <Text style={styles.infoLabel}>{t('buildingId')}</Text>
               <Text style={styles.infoValueMono} selectable>{user.building_id}</Text>
             </View>
           </View>
         </View>
       ) : null}
 
-      {/* Not joined warning for user */}
       {user?.role === 'user' && !user?.building_id ? (
-        <View style={styles.infoSection}>
+        <View style={styles.section}>
           <View style={[styles.infoCard, { borderLeftWidth: 3, borderLeftColor: Colors.warning }]}>
             <Ionicons name="time-outline" size={20} color={Colors.warning} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.infoLabel}>Building Status</Text>
-              <Text style={[styles.infoValue, { color: Colors.warning }]}>Not joined any building yet</Text>
+              <Text style={styles.infoLabel}>{t('buildingStatus')}</Text>
+              <Text style={[styles.infoValue, { color: Colors.warning }]}>{t('notJoined')}</Text>
             </View>
           </View>
         </View>
       ) : null}
 
-      {/* Quick Links (non-admin only) */}
-      {menuItems.length > 0 ? (
+      {menuItems.length > 0 && (
         <View style={styles.menuSection}>
           {menuItems.map((item, idx) => (
             <TouchableOpacity
@@ -83,14 +84,61 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      ) : null}
+      )}
+
+      {/* Language selector */}
+      <View style={styles.menuSection}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => setShowLangPicker(true)}>
+          <View style={styles.menuLeft}>
+            <Text style={styles.langFlag}>{currentLang.flag}</Text>
+            <View>
+              <Text style={styles.menuLabel}>{t('language')}</Text>
+              <Text style={styles.menuSub}>{currentLang.nativeLabel}</Text>
+            </View>
+          </View>
+          <View style={styles.langChip}>
+            <Text style={styles.langChipText}>{currentLang.label}</Text>
+            <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
+          </View>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
-        <Text style={styles.logoutText}>Logout</Text>
+        <Text style={styles.logoutText}>{t('logout')}</Text>
       </TouchableOpacity>
 
       <View style={{ height: 40 }} />
+
+      {/* Language picker modal */}
+      <Modal visible={showLangPicker} transparent animationType="slide" onRequestClose={() => setShowLangPicker(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowLangPicker(false)}>
+          <TouchableOpacity activeOpacity={1} style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>{t('selectLanguage')}</Text>
+            <FlatList
+              data={LANGUAGES}
+              keyExtractor={i => i.code}
+              renderItem={({ item }) => {
+                const active = language === item.code;
+                return (
+                  <TouchableOpacity
+                    style={[styles.langOption, active && styles.langOptionActive]}
+                    onPress={() => { setLanguage(item.code); setShowLangPicker(false); }}
+                  >
+                    <Text style={styles.langOptionFlag}>{item.flag}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.langOptionLabel, active && { color: Colors.primary }]}>{item.nativeLabel}</Text>
+                      <Text style={styles.langOptionSub}>{item.label}</Text>
+                    </View>
+                    {active && <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 }
@@ -104,16 +152,29 @@ const styles = StyleSheet.create({
   email: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
   roleBadge: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4, marginTop: 10 },
   roleText: { color: Colors.white, fontSize: 12, fontWeight: '800' },
-  infoSection: { margin: 16, marginBottom: 0, gap: 10 },
+  section: { margin: 16, marginBottom: 0 },
   infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, backgroundColor: Colors.white, borderRadius: 14, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
   infoLabel: { fontSize: 12, color: Colors.textMuted },
   infoValue: { fontSize: 15, fontWeight: '700', color: Colors.text, marginTop: 2 },
   infoValueMono: { fontSize: 12, color: Colors.text, marginTop: 4, fontFamily: 'monospace' },
-  menuSection: { margin: 16, backgroundColor: Colors.white, borderRadius: 14, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  menuSection: { margin: 16, marginBottom: 0, backgroundColor: Colors.white, borderRadius: 14, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
   menuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
   menuItemBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
   menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   menuLabel: { fontSize: 15, fontWeight: '600', color: Colors.text },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, margin: 16, backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: Colors.danger },
+  menuSub: { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
+  langFlag: { fontSize: 24 },
+  langChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primary + '15', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  langChipText: { fontSize: 13, color: Colors.primary, fontWeight: '700' },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, margin: 16, marginTop: 16, backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: Colors.danger },
   logoutText: { fontSize: 16, fontWeight: '700', color: Colors.danger },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: Colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: Colors.text, marginBottom: 16 },
+  langOption: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 12, marginBottom: 8, backgroundColor: Colors.bg },
+  langOptionActive: { backgroundColor: Colors.primary + '12', borderWidth: 1.5, borderColor: Colors.primary },
+  langOptionFlag: { fontSize: 28 },
+  langOptionLabel: { fontSize: 16, fontWeight: '700', color: Colors.text },
+  langOptionSub: { fontSize: 13, color: Colors.textMuted, marginTop: 1 },
 });

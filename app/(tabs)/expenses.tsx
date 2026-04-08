@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import BuildingDropdown from '../../components/BuildingDropdown';
@@ -213,6 +213,8 @@ export default function ExpensesScreen() {
       </TouchableOpacity>
     );
   };
+
+  
 
   return (
     <View style={styles.container}>

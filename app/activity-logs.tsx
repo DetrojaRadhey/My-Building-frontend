@@ -1,24 +1,13 @@
 import React, { useState, useCallback } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, RefreshControl, TextInput, Modal, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Colors } from '../constants/colors';
 import api from '../utils/api';
 
-const MODULE_COLORS: Record<string, string> = {
-  auth: '#6366F1', maintenance: '#10B981', complaints: '#EF4444',
-  vehicles: '#0EA5E9', visitors: '#F59E0B', buildings: '#1E3A8A',
-  subscriptions: '#7C3AED', expenses: '#059669', chat: '#EC4899',
-  meetings: '#0891B2', funds: '#D97706', requests: '#16A34A',
-  announcements: '#F59E0B', promos: '#EC4899', inquiries: '#0891B2',
-  helpline: '#EF4444', app: Colors.primary,
-};
-const ROLE_COLORS: Record<string, string> = {
-  user: Colors.success, pramukh: Colors.accent, admin: Colors.danger,
-};
 const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const MONTH_NAMES = ['January','February','March','April','May','June',
   'July','August','September','October','November','December'];
@@ -48,6 +37,7 @@ function toDateStr(y: number, m: number, d: number) {
 
 // ── Inline Calendar ───────────────────────────────────────────────────────────
 function Calendar({ selected, onSelect }: { selected: string; onSelect: (d: string) => void }) {
+  const cal = makeCal(Colors);
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -107,6 +97,17 @@ function Calendar({ selected, onSelect }: { selected: string; onSelect: (d: stri
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function ActivityLogsScreen() {
+  const MODULE_COLORS: Record<string, string> = {
+    auth: '#6366F1', maintenance: '#10B981', complaints: '#EF4444',
+    vehicles: '#0EA5E9', visitors: '#F59E0B', buildings: '#1E3A8A',
+    subscriptions: '#7C3AED', expenses: '#059669', chat: '#EC4899',
+    meetings: '#0891B2', funds: '#D97706', requests: '#16A34A',
+    announcements: '#F59E0B', promos: '#EC4899', inquiries: '#0891B2',
+    helpline: '#EF4444', app: Colors.primary,
+  };
+  const ROLE_COLORS: Record<string, string> = {
+    user: Colors.success, pramukh: Colors.accent, admin: Colors.danger,
+  };
   const router = useRouter();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -266,6 +267,8 @@ export default function ActivityLogsScreen() {
     );
   };
 
+  
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -419,7 +422,7 @@ const styles = StyleSheet.create({
   noDetailText: { fontSize: 13, color: Colors.textMuted },
 });
 
-const cal = StyleSheet.create({
+const calStyles = StyleSheet.create({
   wrap: { padding: 14 },
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   navBtn: { padding: 6 },

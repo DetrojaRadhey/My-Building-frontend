@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
@@ -88,6 +88,8 @@ export default function MyDetailsScreen() {
   useEffect(() => {
     if (!user?.phone && !editing) setEditing(true);
   }, [user?.phone]);
+
+  
 
   return (
     <ScrollView style={styles.container}>

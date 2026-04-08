@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { useBuildings } from '../../hooks/useBuildings';
@@ -23,6 +23,7 @@ function VehicleDropdown({ vehicles, selected, onSelect, isAdmin, hasBuilding }:
   hasBuilding: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const ddStyles = makeDdStyles(Colors);
 
   const selectedVehicle = vehicles.find(v => v.vehicle_number === selected);
   const displayLabel = selectedVehicle
@@ -82,7 +83,7 @@ function VehicleDropdown({ vehicles, selected, onSelect, isAdmin, hasBuilding }:
   );
 }
 
-const ddStyles = StyleSheet.create({
+const makeDdStyles = (Colors: any) => StyleSheet.create({
   trigger: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
@@ -300,6 +301,8 @@ export default function ParkingScreen() {
     </View>
   );
 
+  
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -313,8 +316,9 @@ export default function ParkingScreen() {
               <Ionicons name="add" size={22} color={Colors.white} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.headerBtn} onPress={() => setShowReport(true)}>
-            <Ionicons name="warning" size={20} color={Colors.white} />
+          <TouchableOpacity style={styles.headerReportBtn} onPress={() => setShowReport(true)}>
+            <Ionicons name="warning" size={16} color={Colors.white} />
+            <Text style={styles.headerReportBtnText}>Report</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -531,6 +535,8 @@ const styles = StyleSheet.create({
   headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
   headerActions: { flexDirection: 'row', gap: 8 },
   headerBtn: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: 8 },
+  headerReportBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  headerReportBtnText: { color: Colors.white, fontSize: 13, fontWeight: '700' },
   backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
   filterBar: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
   tabRow: { flexDirection: 'row', backgroundColor: Colors.white, marginHorizontal: 16, marginTop: 16, borderRadius: 12, padding: 4 },

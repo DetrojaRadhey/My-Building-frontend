@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   Animated, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import NetInfo from '@react-native-community/netinfo';
-import { Colors } from '../constants/colors';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 
 export default function NoInternetOverlay() {
@@ -37,6 +37,8 @@ export default function NoInternetOverlay() {
 
   // Don't render anything while doing initial check or when connected
   if (isChecking || isConnected) return null;
+
+  
 
   return (
     <Modal visible transparent animationType="fade" statusBarTranslucent>

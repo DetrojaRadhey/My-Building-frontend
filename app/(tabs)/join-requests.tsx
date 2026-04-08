@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Alert, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/colors';
 import api from '../../utils/api';
 import { useMarkNotificationsRead } from '../../hooks/useMarkNotificationsRead';
 
@@ -75,6 +75,8 @@ export default function JoinRequestsScreen() {
       </View>
     </View>
   );
+
+  
 
   return (
     <View style={styles.container}>

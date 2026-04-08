@@ -1,22 +1,22 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../constants/colors';
 import api from '../../utils/api';
 import BuildingDropdown from '../../components/BuildingDropdown';
 import { useBuildings } from '../../hooks/useBuildings';
 import type { Building } from '../../hooks/useBuildings';
 
 const ROLES = ['user', 'pramukh'];
-const ROLE_COLORS: Record<string, string> = {
-  user: Colors.success, pramukh: Colors.primary, admin: Colors.danger,
-};
 
 export default function UsersScreen() {
+  const ROLE_COLORS: Record<string, string> = {
+    user: Colors.success, pramukh: Colors.primary, admin: Colors.danger,
+  };
   const { buildings, loading: buildingsLoading } = useBuildings(true);
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
@@ -131,6 +131,8 @@ export default function UsersScreen() {
       </View>
     </View>
   );
+
+  
 
   return (
     <View style={styles.container}>

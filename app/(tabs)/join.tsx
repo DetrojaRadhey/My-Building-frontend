@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   Alert, ActivityIndicator, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 
@@ -51,6 +51,8 @@ export default function JoinBuildingScreen() {
       setSubmitting(false);
     }
   };
+
+  
 
   if (submitted) {
     return (

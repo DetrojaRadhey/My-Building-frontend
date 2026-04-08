@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../constants/colors';
 import api from '../../utils/api';
 import BuildingDropdown from '../../components/BuildingDropdown';
 import type { Building } from '../../hooks/useBuildings';
@@ -55,6 +55,8 @@ export default function AdminScreen() {
   const [subsLoading, setSubsLoading] = useState(false);
   const [grantForm, setGrantForm] = useState({ user_id: '', plan: 'monthly', months: '1', remark: '' });
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
 
   React.useEffect(() => { fetchBuildings(); }, []);
 
@@ -128,6 +130,8 @@ export default function AdminScreen() {
       setAllUsers(all);
     } catch {}
     setGrantForm({ user_id: '', plan: 'monthly', months: '1', remark: '' });
+    setUserDropdownOpen(false);
+    setUserSearch('');
     setModal('grantSub');
   };
 
@@ -173,6 +177,8 @@ export default function AdminScreen() {
     { route: '/(tabs)/visitors',      icon: 'people',       color: '#6366F1', label: 'Visitors' },
     { route: '/(tabs)/parking',       icon: 'car',          color: '#0EA5E9', label: 'Parking' },
   ];
+
+  
 
   return (
     <View style={styles.container}>
@@ -410,22 +416,88 @@ export default function AdminScreen() {
           </View>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={styles.label}>User *</Text>
-            <View style={styles.pickerBox}>
-              {allUsers.length === 0
-                ? <Text style={{ color: Colors.textMuted, padding: 12 }}>Loading users...</Text>
-                : allUsers.map(u => (
+            {(() => {
+              const selectedUser = allUsers.find(u => u.id === grantForm.user_id);
+              const filtered = allUsers.filter(u =>
+                !userSearch.trim() ||
+                u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+                u.email.toLowerCase().includes(userSearch.toLowerCase())
+              );
+              return (
+                <View style={{ marginBottom: 4 }}>
                   <TouchableOpacity
-                    key={u.id}
-                    style={[styles.pickerItem, grantForm.user_id === u.id && styles.pickerItemActive]}
-                    onPress={() => setGrantForm({ ...grantForm, user_id: u.id })}
+                    style={[styles.dropdownTrigger, userDropdownOpen && styles.dropdownTriggerOpen]}
+                    onPress={() => { setUserDropdownOpen(o => !o); setUserSearch(''); }}
+                    activeOpacity={0.8}
                   >
-                    <Text style={[styles.pickerItemText, grantForm.user_id === u.id && { color: Colors.white }]}>
-                      {u.name} — {u.email}
-                    </Text>
+                    <View style={styles.dropdownTriggerAvatar}>
+                      <Text style={styles.dropdownTriggerAvatarText}>
+                        {selectedUser ? selectedUser.name[0].toUpperCase() : '?'}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      {selectedUser ? (
+                        <>
+                          <Text style={styles.dropdownTriggerName}>{selectedUser.name}</Text>
+                          <Text style={styles.dropdownTriggerEmail}>{selectedUser.email}</Text>
+                        </>
+                      ) : (
+                        <Text style={styles.dropdownTriggerPlaceholder}>
+                          {allUsers.length === 0 ? 'Loading users...' : 'Select a user'}
+                        </Text>
+                      )}
+                    </View>
+                    <Ionicons name={userDropdownOpen ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.textMuted} />
                   </TouchableOpacity>
-                ))
-              }
-            </View>
+
+                  {userDropdownOpen && (
+                    <View style={styles.dropdownMenu}>
+                      <View style={styles.dropdownSearch}>
+                        <Ionicons name="search" size={16} color={Colors.textMuted} />
+                        <TextInput
+                          style={styles.dropdownSearchInput}
+                          value={userSearch}
+                          onChangeText={setUserSearch}
+                          placeholder="Search by name or email..."
+                          placeholderTextColor={Colors.textMuted}
+                          autoFocus
+                        />
+                        {userSearch.length > 0 && (
+                          <TouchableOpacity onPress={() => setUserSearch('')}>
+                            <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                      <ScrollView style={{ maxHeight: 220 }} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                        {filtered.length === 0 ? (
+                          <Text style={styles.dropdownEmpty}>No users found</Text>
+                        ) : filtered.map(u => {
+                          const active = grantForm.user_id === u.id;
+                          return (
+                            <TouchableOpacity
+                              key={u.id}
+                              style={[styles.dropdownItem, active && styles.dropdownItemActive]}
+                              onPress={() => { setGrantForm({ ...grantForm, user_id: u.id }); setUserDropdownOpen(false); setUserSearch(''); }}
+                            >
+                              <View style={[styles.dropdownItemAvatar, active && { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
+                                <Text style={[styles.dropdownItemAvatarText, active && { color: Colors.white }]}>
+                                  {u.name[0].toUpperCase()}
+                                </Text>
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={[styles.dropdownItemName, active && { color: Colors.white }]}>{u.name}</Text>
+                                <Text style={[styles.dropdownItemEmail, active && { color: 'rgba(255,255,255,0.75)' }]}>{u.email}</Text>
+                              </View>
+                              {active && <Ionicons name="checkmark-circle" size={18} color={Colors.white} />}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
 
             <Text style={styles.label}>Plan *</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -528,10 +600,23 @@ const styles = StyleSheet.create({
   revokeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-end' },
   revokeBtnText: { fontSize: 12, color: Colors.danger, fontWeight: '700' },
   // Grant sub
-  pickerBox: { borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10, overflow: 'hidden', marginBottom: 4 },
-  pickerItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  pickerItemActive: { backgroundColor: Colors.primary },
-  pickerItemText: { fontSize: 14, color: Colors.text },
+  dropdownTrigger: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderColor: Colors.border, borderRadius: 12, padding: 12, backgroundColor: Colors.bg },
+  dropdownTriggerOpen: { borderColor: Colors.primary, backgroundColor: Colors.white },
+  dropdownTriggerAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.primary + '20', justifyContent: 'center', alignItems: 'center' },
+  dropdownTriggerAvatarText: { fontSize: 15, fontWeight: '800', color: Colors.primary },
+  dropdownTriggerName: { fontSize: 14, fontWeight: '700', color: Colors.text },
+  dropdownTriggerEmail: { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
+  dropdownTriggerPlaceholder: { fontSize: 14, color: Colors.textMuted },
+  dropdownMenu: { borderWidth: 1.5, borderColor: Colors.primary + '40', borderRadius: 12, backgroundColor: Colors.white, marginTop: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 6, overflow: 'hidden' },
+  dropdownSearch: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.bg },
+  dropdownSearchInput: { flex: 1, fontSize: 14, color: Colors.text },
+  dropdownEmpty: { textAlign: 'center', color: Colors.textMuted, padding: 16, fontSize: 13 },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  dropdownItemActive: { backgroundColor: Colors.primary },
+  dropdownItemAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primary + '20', justifyContent: 'center', alignItems: 'center' },
+  dropdownItemAvatarText: { fontSize: 13, fontWeight: '800', color: Colors.primary },
+  dropdownItemName: { fontSize: 14, fontWeight: '700', color: Colors.text },
+  dropdownItemEmail: { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
   planToggle: { flex: 1, borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10, padding: 12, alignItems: 'center' },
   planToggleActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   planToggleText: { fontSize: 14, fontWeight: '700', color: Colors.text },

@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, SectionList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView, Image,
@@ -7,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useActivityLog } from '../hooks/useActivityLog';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
@@ -229,6 +229,8 @@ export default function ComplaintsScreen() {
       <SummaryCard count={totalResolved} label="Resolved" color="#16A34A" icon="checkmark-circle" />
     </View>
   );
+
+  
 
   return (
     <View style={styles.container}>
@@ -518,6 +520,7 @@ export default function ComplaintsScreen() {
 }
 
 function SummaryCard({ count, label, color, icon }: { count: number; label: string; color: string; icon: string }) {
+  
   return (
     <View style={[styles.summaryCard, { borderTopColor: color }]}>
       <Ionicons name={icon as any} size={20} color={color} />

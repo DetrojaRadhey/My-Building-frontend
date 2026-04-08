@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TextInput,
   TouchableOpacity, ActivityIndicator, RefreshControl,
@@ -6,7 +7,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { Colors } from '../../constants/colors';
 import api from '../../utils/api';
 
 type Member = {
@@ -20,11 +20,6 @@ type Member = {
   wing: string | null;
 };
 
-const ROLE_COLOR: Record<string, string> = {
-  pramukh: Colors.primary,
-  user: Colors.success,
-  watchman: '#F59E0B',
-};
 const ROLE_LABEL: Record<string, string> = {
   pramukh: 'Pramukh',
   user: 'Member',
@@ -32,6 +27,11 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default function MembersScreen() {
+  const ROLE_COLOR: Record<string, string> = {
+    pramukh: Colors.primary,
+    user: Colors.success,
+    watchman: '#F59E0B',
+  };
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -141,6 +141,8 @@ export default function MembersScreen() {
       </View>
     );
   };
+
+  
 
   return (
     <View style={styles.container}>

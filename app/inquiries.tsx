@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Modal, ScrollView, Alert, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../constants/colors';
 import api from '../utils/api';
 
 export default function InquiriesScreen() {
@@ -56,6 +56,8 @@ export default function InquiriesScreen() {
     ['Payment Method', selected.payment_method],
     ['Submitted On', new Date(selected.created_at).toLocaleString('en-IN')],
   ].filter(([, v]) => v != null && v !== '') : [];
+
+  
 
   return (
     <View style={styles.container}>

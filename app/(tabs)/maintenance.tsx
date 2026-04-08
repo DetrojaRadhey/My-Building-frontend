@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView, Linking,
@@ -6,7 +7,6 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { API_BASE } from '../../constants/api';
@@ -329,6 +329,8 @@ export default function MaintenanceScreen() {
         { key: 'bills', label: 'Bills', icon: 'document-text-outline' },
       ]
     : [{ key: 'my-bills', label: 'My Bills', icon: 'receipt-outline' }];
+
+  
 
   return (
     <View style={styles.container}>

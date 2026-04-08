@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   KeyboardAvoidingView, Platform, ActivityIndicator,
@@ -6,7 +7,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { supabase } from '../../utils/supabase';
@@ -236,6 +236,8 @@ export default function ChatScreen() {
     reconnecting: { color: Colors.warning, label: 'Reconnecting...' },
     offline:      { color: Colors.danger, label: 'Offline' },
   }[connStatus];
+
+  
 
   return (
     <KeyboardAvoidingView
