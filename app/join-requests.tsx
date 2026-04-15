@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useLanguage } from '../../context/LanguageContext';
-import { Colors } from '../../constants/colors';
+import { useLanguage } from '../context/LanguageContext';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Alert, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../utils/api';
-import { useMarkNotificationsRead } from '../../hooks/useMarkNotificationsRead';
+import { useRouter } from 'expo-router';
+import api from '../utils/api';
+import { useMarkNotificationsRead } from '../hooks/useMarkNotificationsRead';
 
 export default function JoinRequestsScreen() {
   const { t } = useLanguage();
+  const router = useRouter();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -83,6 +85,9 @@ export default function JoinRequestsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('joinRequestsTitle')}</Text>
       </View>
       {loading ? (
@@ -108,7 +113,8 @@ export default function JoinRequestsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  header: { backgroundColor: '#3B5FC0', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20 },
+  header: { backgroundColor: '#3B5FC0', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
   card: { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
   cardInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useLanguage } from '../../context/LanguageContext';
-import { Colors } from '../../constants/colors';
+import { useLanguage } from '../context/LanguageContext';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView, Linking,
@@ -8,14 +8,14 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
-import { API_BASE } from '../../constants/api';
-import { useBuildings } from '../../hooks/useBuildings';
-import BuildingDropdown from '../../components/BuildingDropdown';
-import type { Building } from '../../hooks/useBuildings';
-import { useMarkNotificationsRead } from '../../hooks/useMarkNotificationsRead';
-import { useActivityLog } from '../../hooks/useActivityLog';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
+import { API_BASE } from '../constants/api';
+import { useBuildings } from '../hooks/useBuildings';
+import BuildingDropdown from '../components/BuildingDropdown';
+import type { Building } from '../hooks/useBuildings';
+import { useMarkNotificationsRead } from '../hooks/useMarkNotificationsRead';
+import { useActivityLog } from '../hooks/useActivityLog';
 
 const MONTHS = ['', 'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];

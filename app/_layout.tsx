@@ -69,6 +69,14 @@ function RootNavigator() {
       <Stack.Screen name="choose-language" options={{ gestureEnabled: false, animation: 'fade' }} />
       <Stack.Screen name="(auth)" options={{ gestureEnabled: false }} />
       <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="maintenance" />
+      <Stack.Screen name="announcements" />
+      <Stack.Screen name="visitors" />
+      <Stack.Screen name="parking" />
+      <Stack.Screen name="chat" />
+      <Stack.Screen name="members" />
+      <Stack.Screen name="expenses" />
+      <Stack.Screen name="join-requests" />
       <Stack.Screen name="subscribe" />
       <Stack.Screen name="subscriptions-admin" />
       <Stack.Screen name="helpline" />

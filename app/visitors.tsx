@@ -1,19 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useLanguage } from '../../context/LanguageContext';
-import { Colors } from '../../constants/colors';
+import { useLanguage } from '../context/LanguageContext';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Alert, ActivityIndicator, RefreshControl, Share, Modal, ScrollView, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
-import { ENTRY_BASE } from '../../constants/api';
-import { useBuildings } from '../../hooks/useBuildings';
-import BuildingDropdown from '../../components/BuildingDropdown';
-import type { Building } from '../../hooks/useBuildings';
-import { useMarkNotificationsRead } from '../../hooks/useMarkNotificationsRead';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
+import { ENTRY_BASE } from '../constants/api';
+import { useBuildings } from '../hooks/useBuildings';
+import BuildingDropdown from '../components/BuildingDropdown';
+import type { Building } from '../hooks/useBuildings';
+import { useMarkNotificationsRead } from '../hooks/useMarkNotificationsRead';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];

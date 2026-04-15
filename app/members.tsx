@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { useLanguage } from '../../context/LanguageContext';
-import { Colors } from '../../constants/colors';
+import { useLanguage } from '../context/LanguageContext';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TextInput,
   TouchableOpacity, ActivityIndicator, RefreshControl,
   Linking, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import api from '../../utils/api';
+import { useFocusEffect, useRouter } from 'expo-router';
+import api from '../utils/api';
 
 type Member = {
   id: string;
@@ -29,6 +29,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default function MembersScreen() {
   const { t } = useLanguage();
+  const router = useRouter();
   const ROLE_COLOR: Record<string, string> = {
     pramukh: Colors.primary,
     user: Colors.success,
@@ -150,11 +151,16 @@ export default function MembersScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('members')}</Text>
-        <Text style={styles.headerSub}>
-          {filtered.length} of {members.length} members
-          {selectedWing !== 'All' ? ` · Wing ${selectedWing}` : ''}
-        </Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>{t('members')}</Text>
+          <Text style={styles.headerSub}>
+            {filtered.length} of {members.length} members
+            {selectedWing !== 'All' ? ` · Wing ${selectedWing}` : ''}
+          </Text>
+        </View>
       </View>
 
       {/* Search */}
@@ -242,7 +248,9 @@ const styles = StyleSheet.create({
 
   header: {
     backgroundColor: '#3B5FC0', paddingTop: 56, paddingBottom: 20, paddingHorizontal: 20,
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
   },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
   headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
   headerSub: { color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 3 },
 

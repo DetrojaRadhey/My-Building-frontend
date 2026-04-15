@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useLanguage } from '../../context/LanguageContext';
-import { Colors } from '../../constants/colors';
+import { useLanguage } from '../context/LanguageContext';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
-import { useBuildings } from '../../hooks/useBuildings';
-import BuildingDropdown from '../../components/BuildingDropdown';
-import type { Building } from '../../hooks/useBuildings';
-import { useActivityLog } from '../../hooks/useActivityLog';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
+import { useBuildings } from '../hooks/useBuildings';
+import BuildingDropdown from '../components/BuildingDropdown';
+import type { Building } from '../hooks/useBuildings';
+import { useActivityLog } from '../hooks/useActivityLog';
 
 type Tab = 'vehicles' | 'reports';
 

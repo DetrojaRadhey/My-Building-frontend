@@ -1,20 +1,21 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useLanguage } from '../../context/LanguageContext';
-import { Colors } from '../../constants/colors';
+import { useLanguage } from '../context/LanguageContext';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
-import { useActivityLog } from '../../hooks/useActivityLog';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
+import { useActivityLog } from '../hooks/useActivityLog';
 
 export default function ChatScreen() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { logEvent } = useActivityLog();
+  const router = useRouter();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
@@ -171,6 +172,9 @@ export default function ChatScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        </TouchableOpacity>
         <View style={styles.headerLeft}>
           <View style={styles.groupIcon}>
             <Text style={{ fontSize: 20 }}>🏢</Text>
@@ -240,8 +244,9 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ECE5DD' },
-  header: { backgroundColor: '#3B5FC0', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  header: { backgroundColor: '#3B5FC0', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   groupIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   headerTitle: { color: Colors.white, fontSize: 18, fontWeight: '800' },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },

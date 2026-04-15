@@ -1,16 +1,16 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { useLanguage } from '../../context/LanguageContext';
-import { Colors } from '../../constants/colors';
+import { useLanguage } from '../context/LanguageContext';
+import { Colors } from '../constants/colors';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Modal, Alert, ActivityIndicator, RefreshControl, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
-import BuildingDropdown from '../../components/BuildingDropdown';
-import { useBuildings, Building } from '../../hooks/useBuildings';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
+import BuildingDropdown from '../components/BuildingDropdown';
+import { useBuildings, Building } from '../hooks/useBuildings';
 
 type Entry = {
   id: string; type: 'inflow' | 'outflow'; amount: number;
