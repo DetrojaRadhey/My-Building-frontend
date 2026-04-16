@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator, Modal, FlatList,
+  TextInput, Alert, ActivityIndicator, Modal, FlatList, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
 import api from '../utils/api';
+import * as ImagePicker from 'expo-image-picker';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const SOCIETY_TYPES = ['Apartment Complex', 'Gated Community', 'Township', 'Co-operative Housing', 'Villa Society', 'Other'];
-const PAYMENT_METHODS = ['Cash Only', 'Online (Payment Gateway)', 'Both Cash & Online'];
+const PAYMENT_METHODS = ['Cash Only', 'Cheque', 'Online (Payment Gateway)', 'Both Cash & Online', 'Cheque & Online'];
 
 const STATES_CITIES: Record<string, string[]> = {
   'Andhra Pradesh': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool'],
@@ -123,15 +124,35 @@ export default function RegisterBuildingScreen() {
   const [form, setForm] = useState({
     // Basic
     society_type: '', society_name: '', total_wings: '',
+    society_logo: '',
     // Location
     state: '', city: '', pincode: '', address: '',
     // Financials
     late_fee: '', maintenance_fixed: false, water_bill_separate: false,
     // Payment
-    payment_method: '',
+    payment_method: '', payment_tc: '', payment_gateway_link: '',
   });
 
+  const [logoError, setLogoError] = useState('');
+
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+
+  const pickLogo = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      base64: true,
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    if (asset.fileSize && asset.fileSize > 2 * 1024 * 1024) {
+      setLogoError('Image must be under 2 MB. Please choose a smaller image.');
+      set('society_logo', '');
+      return;
+    }
+    setLogoError('');
+    set('society_logo', `data:image/jpeg;base64,${asset.base64}`);
+  };
 
   const openPicker = (key: string, title: string, options: string[]) => setPicker({ key, title, options });
 
@@ -197,6 +218,17 @@ export default function RegisterBuildingScreen() {
             <TextInput style={styles.input} value={form.society_name} onChangeText={v => set('society_name', v)} placeholder="e.g. Yamuna Park Society" placeholderTextColor={Colors.textMuted} />
             <Text style={styles.label}>Total Wings *</Text>
             <TextInput style={styles.input} value={form.total_wings} onChangeText={v => set('total_wings', v)} placeholder="e.g. 4" keyboardType="numeric" placeholderTextColor={Colors.textMuted} />
+            <Text style={styles.label}>Society Logo (optional)</Text>
+            <TouchableOpacity style={styles.logoPicker} onPress={pickLogo}>
+              {form.society_logo
+                ? <Image source={{ uri: form.society_logo }} style={styles.logoPreview} />
+                : <View style={styles.logoPlaceholder}>
+                    <Ionicons name="image-outline" size={32} color={Colors.textMuted} />
+                    <Text style={styles.logoPlaceholderText}>Tap to select logo</Text>
+                  </View>
+              }
+            </TouchableOpacity>
+            {logoError ? <Text style={styles.logoError}>{logoError}</Text> : null}
           </View>
         )}
 
@@ -231,6 +263,39 @@ export default function RegisterBuildingScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Payment Details</Text>
             <SelectField label="Maintenance Payment Method *" value={form.payment_method} placeholder="Select method" onPress={() => openPicker('payment_method', 'Payment Method', PAYMENT_METHODS)} />
+            {(form.payment_method === 'Cheque' || form.payment_method === 'Cheque & Online') && (
+              <View style={styles.infoNote}>
+                <Ionicons name="information-circle-outline" size={16} color={Colors.primary} />
+                <Text style={styles.infoNoteText}>Members will be able to upload a transaction receipt as proof of payment.</Text>
+              </View>
+            )}
+            {form.payment_method === 'Online (Payment Gateway)' && (
+              <>
+                <Text style={styles.label}>Payment Gateway Link</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.payment_gateway_link}
+                  onChangeText={v => set('payment_gateway_link', v)}
+                  placeholder="https://pay.example.com/..."
+                  placeholderTextColor={Colors.textMuted}
+                  keyboardType="url"
+                  autoCapitalize="none"
+                />
+              </>
+            )}
+            <Text style={styles.label}>Payment Terms & Conditions (optional)</Text>
+            <TextInput
+              style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+              value={form.payment_tc}
+              onChangeText={v => { if (v.length <= 1000) set('payment_tc', v); }}
+              placeholder="e.g. Payment is due by the 10th of each month..."
+              placeholderTextColor={Colors.textMuted}
+              multiline
+              maxLength={1000}
+            />
+            <Text style={[styles.charCount, form.payment_tc.length >= 900 && styles.charCountWarn]}>
+              {form.payment_tc.length}/1000
+            </Text>
             <View style={styles.summaryBox}>
               <Text style={styles.summaryTitle}>Summary</Text>
               {[
@@ -322,4 +387,13 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.border },
   summaryKey: { fontSize: 13, color: Colors.textMuted },
   summaryVal: { fontSize: 13, fontWeight: '600', color: Colors.text, maxWidth: '60%', textAlign: 'right' },
+  logoPicker: { alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: Colors.border, borderRadius: 60, width: 100, height: 100, alignSelf: 'center', marginBottom: 8, overflow: 'hidden', backgroundColor: Colors.bg },
+  logoPreview: { width: 100, height: 100, borderRadius: 50 },
+  logoPlaceholder: { alignItems: 'center', justifyContent: 'center', gap: 4 },
+  logoPlaceholderText: { fontSize: 11, color: Colors.textMuted, textAlign: 'center' },
+  logoError: { fontSize: 12, color: Colors.danger, textAlign: 'center', marginBottom: 8 },
+  infoNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: Colors.primary + '12', borderRadius: 10, padding: 12, marginBottom: 14 },
+  infoNoteText: { fontSize: 13, color: Colors.primary, flex: 1, lineHeight: 18 },
+  charCount: { fontSize: 11, color: Colors.textMuted, textAlign: 'right', marginTop: -10, marginBottom: 14 },
+  charCountWarn: { color: Colors.danger },
 });

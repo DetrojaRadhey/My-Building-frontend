@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, FlatList, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { LANGUAGES } from '../../constants/translations';
 import { useRouter } from 'expo-router';
+import api from '../../utils/api';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const router = useRouter();
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [buildingLogo, setBuildingLogo] = useState<string | null>(null);
   const isAdmin = user?.role === 'admin';
   const isPramukh = user?.role === 'pramukh';
+  const hasBuilding = !!user?.building_id;
+
+  useEffect(() => {
+    if (user?.building_id) {
+      api.get('/buildings/my')
+        .then(res => setBuildingLogo(res.data.society_logo ?? null))
+        .catch(() => {});
+    }
+  }, [user?.building_id]);
 
   const handleLogout = () => {
     Alert.alert(t('logout'), t('logoutConfirm'), [
@@ -26,17 +37,20 @@ export default function ProfileScreen() {
   const currentLang = LANGUAGES.find(l => l.code === language)!;
 
   const menuItems = isAdmin ? [] : [
-    { icon: 'warning-outline', label: t('myComplaints'), onPress: () => router.push('/complaints?mine=true' as any) },
-    { icon: 'car-outline', label: t('myVehicles'), onPress: () => router.push('/my-vehicles' as any) },
-    { icon: 'wallet-outline', label: t('paymentHistory'), onPress: () => router.push('/my-payments' as any) },
+    { icon: 'warning-outline', label: t('myComplaints'), onPress: () => router.push('/complaints?mine=true' as any), disabled: !hasBuilding },
+    { icon: 'car-outline', label: t('myVehicles'), onPress: () => router.push('/my-vehicles' as any), disabled: !hasBuilding },
+    { icon: 'wallet-outline', label: t('paymentHistory'), onPress: () => router.push('/my-payments' as any), disabled: !hasBuilding },
   ];
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.avatarLarge}>
-          <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
-        </View>
+        {buildingLogo
+          ? <Image source={{ uri: buildingLogo }} style={styles.avatarLargeImg} />
+          : <View style={styles.avatarLarge}>
+              <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
+            </View>
+        }
         <Text style={styles.name}>{user?.name}</Text>
         <Text style={styles.email}>{user?.email}</Text>
         <View style={[styles.roleBadge, { backgroundColor: roleColor }]}>
@@ -71,17 +85,33 @@ export default function ProfileScreen() {
       {menuItems.length > 0 && (
         <View style={styles.menuSection}>
           {menuItems.map((item, idx) => (
-            <TouchableOpacity
-              key={item.label}
-              style={[styles.menuItem, idx < menuItems.length - 1 && styles.menuItemBorder]}
-              onPress={item.onPress}
-            >
-              <View style={styles.menuLeft}>
-                <Ionicons name={item.icon as any} size={22} color={Colors.primary} />
-                <Text style={styles.menuLabel}>{item.label}</Text>
+            item.disabled ? (
+              <View
+                key={item.label}
+                style={[styles.menuItem, idx < menuItems.length - 1 && styles.menuItemBorder]}
+              >
+                <View style={styles.menuLeft}>
+                  <Ionicons name={item.icon as any} size={22} color={Colors.textMuted} />
+                  <View>
+                    <Text style={[styles.menuLabel, { color: Colors.textMuted }]}>{item.label}</Text>
+                    <Text style={styles.menuSub}>You need to join the building to access this feature</Text>
+                  </View>
+                </View>
+                <Ionicons name="lock-closed-outline" size={18} color={Colors.textMuted} />
               </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                key={item.label}
+                style={[styles.menuItem, idx < menuItems.length - 1 && styles.menuItemBorder]}
+                onPress={item.onPress}
+              >
+                <View style={styles.menuLeft}>
+                  <Ionicons name={item.icon as any} size={22} color={Colors.primary} />
+                  <Text style={styles.menuLabel}>{item.label}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
+            )
           ))}
         </View>
       )}
@@ -147,6 +177,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { backgroundColor: '#3B5FC0', paddingTop: 56, paddingBottom: 32, alignItems: 'center' },
   avatarLarge: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.accent, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  avatarLargeImg: { width: 80, height: 80, borderRadius: 40, marginBottom: 12 },
   avatarText: { fontSize: 36, fontWeight: '800', color: Colors.white },
   name: { fontSize: 22, fontWeight: '800', color: Colors.white },
   email: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 4 },

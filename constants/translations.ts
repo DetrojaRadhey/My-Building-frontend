@@ -60,6 +60,7 @@ const en: Record<string, string> = {
   bankDetails: 'Bank Details', adminPanel: 'Admin Panel',
   users: 'Users', inquiries: 'Inquiries', subscriptions: 'Subscriptions',
   promoCodes: 'Promo Codes', activityLogs: 'Activity Logs',
+  referAndEarn: 'Refer & Earn',
 
   // ── Maintenance ───────────────────────────────────────────────────────────
   maintenanceBills: 'Maintenance Bills', myBills: 'My Bills',
@@ -244,7 +245,7 @@ const hi: Record<string, string> = {
   joinRequests: 'जॉइन अनुरोध', helpline: 'हेल्पलाइन', subscription: 'सदस्यता',
   bankDetails: 'बैंक विवरण', adminPanel: 'एडमिन पैनल', users: 'उपयोगकर्ता',
   inquiries: 'पूछताछ', subscriptions: 'सदस्यताएं', promoCodes: 'प्रोमो कोड',
-  activityLogs: 'गतिविधि लॉग',
+  activityLogs: 'गतिविधि लॉग', referAndEarn: 'रेफर करें और कमाएं',
   maintenanceBills: 'रखरखाव बिल', myBills: 'मेरे बिल',
   addBill: 'बिल जोड़ें', billAdded: 'बिल जोड़ा गया और सदस्यों को सूचित किया गया',
   amountDue: 'बकाया राशि', totalPaid: 'कुल भुगतान', totalBills: 'कुल बिल',
@@ -388,7 +389,7 @@ const gu: Record<string, string> = {
   joinRequests: 'જોડાવાની વિનંતી', helpline: 'હેલ્પલાઇન', subscription: 'સભ્યપદ',
   bankDetails: 'બૅન્ક વિગતો', adminPanel: 'એડમિન પૅનલ', users: 'વપરાશકર્તાઓ',
   inquiries: 'પૂછપરછ', subscriptions: 'સભ્યપદો', promoCodes: 'પ્રોમો કોડ',
-  activityLogs: 'પ્રવૃત્તિ લૉગ',
+  activityLogs: 'પ્રવૃત્તિ લૉગ', referAndEarn: 'રેફર કરો અને કમાઓ',
   maintenanceBills: 'જાળવણી બિલ', myBills: 'મારા બિલ',
   addBill: 'બિલ ઉમેરો', billAdded: 'બિલ ઉમેર્યું અને સભ્યોને જાણ કરી',
   amountDue: 'બાકી રકમ', totalPaid: 'કુલ ચૂકવ્યું', totalBills: 'કુલ બિલ',

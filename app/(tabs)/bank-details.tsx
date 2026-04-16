@@ -33,6 +33,13 @@ export default function BankDetailsScreen() {
   const { t } = useLanguage();
   const isAdmin = user?.role === 'admin';
 
+  // Hard guard — only admin can access this screen
+  useEffect(() => {
+    if (user && !isAdmin) {
+      router.replace('/' as any);
+    }
+  }, [user, isAdmin]);
+
   const { buildings, loading: buildingsLoading } = useBuildings(isAdmin);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
 

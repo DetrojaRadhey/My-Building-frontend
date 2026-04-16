@@ -71,8 +71,24 @@ export default function MaintenanceScreen() {
   const [showEditBill, setShowEditBill] = useState<any>(null);
   const [editForm, setEditForm] = useState({ penalty_amount: '', description: '', due_date: '' });
   const [billSubTab, setBillSubTab] = useState<'current' | 'paid'>('current');
-
+  const [advanceSummary, setAdvanceSummary] = useState<{
+    summary: Array<{ user_id: string; name: string; flat_no: string; wing: string; credit_balance: number; months_covered: number }>;
+    monthly_amount: number | null;
+  } | null>(null);
+  const [advanceSummaryExpanded, setAdvanceSummaryExpanded] = useState(false);
   useFocusEffect(useCallback(() => { fetchPayments(); fetchBills(); logEvent('open_maintenance', 'maintenance'); }, [selectedBuilding]));
+
+  const fetchAdvanceSummary = async () => {
+    if (!isPramukh) return;
+    try {
+      const buildingId = isAdmin ? selectedBuilding?.id : undefined;
+      const url = buildingId ? `/maintenance/advance/summary?building_id=${buildingId}` : '/maintenance/advance/summary';
+      const res = await api.get(url);
+      setAdvanceSummary(res.data);
+    } catch {}
+  };
+
+  useFocusEffect(useCallback(() => { fetchAdvanceSummary(); }, [selectedBuilding]));
 
   useEffect(() => {
     const handleUrl = (event: { url: string }) => {
@@ -491,6 +507,47 @@ export default function MaintenanceScreen() {
               renderItem={renderMemberRow}
               contentContainerStyle={styles.list}
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchPayments(); }} />}
+              ListHeaderComponent={
+                advanceSummary && advanceSummary.summary.length > 0 ? (
+                  <TouchableOpacity
+                    style={advanceSectionStyles.advanceSection}
+                    onPress={() => setAdvanceSummaryExpanded(e => !e)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={advanceSectionStyles.advanceSectionHeader}>
+                      <Ionicons name="wallet-outline" size={16} color={Colors.primary} />
+                      <Text style={advanceSectionStyles.advanceSectionTitle}>
+                        Advance Credit — {advanceSummary.summary.length} member{advanceSummary.summary.length > 1 ? 's' : ''}
+                      </Text>
+                      <Ionicons name={advanceSummaryExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.primary} />
+                    </View>
+                    {advanceSummaryExpanded && advanceSummary.summary.map((m) => (
+                      <View key={m.user_id} style={advanceSectionStyles.advanceMemberRow}>
+                        <View style={advanceSectionStyles.advanceMemberAvatar}>
+                          <Text style={advanceSectionStyles.advanceMemberAvatarText}>{m.name?.[0]?.toUpperCase()}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={advanceSectionStyles.advanceMemberName}>{m.name}</Text>
+                          <Text style={advanceSectionStyles.advanceMemberMeta}>
+                            {m.flat_no ? `Flat ${m.flat_no}` : ''}
+                            {m.wing ? ` · Wing ${m.wing}` : ''}
+                          </Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <Text style={advanceSectionStyles.advanceMemberBalance}>
+                            ₹{m.credit_balance.toLocaleString('en-IN')}
+                          </Text>
+                          {m.months_covered > 0 && (
+                            <Text style={advanceSectionStyles.advanceMemberMonths}>
+                              {m.months_covered} mo covered
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    ))}
+                  </TouchableOpacity>
+                ) : null
+              }
               ListEmptyComponent={
                 <View style={styles.empty}>
                   <Ionicons name="people-outline" size={52} color={Colors.border} />
@@ -894,4 +951,28 @@ const styles = StyleSheet.create({
   dpDayTxt: { fontSize: 13, fontWeight: '600', color: Colors.text },
   dpDayTxtSel: { color: Colors.white, fontWeight: '800' },
   dpDayTxtToday: { color: Colors.primary, fontWeight: '800' },
+});
+
+// Advance credit summary styles (appended for advance-maintenance-payment feature)
+const advanceSectionStyles = StyleSheet.create({
+  advanceSection: {
+    backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 12,
+    borderLeftWidth: 3, borderLeftColor: Colors.primary,
+    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
+  },
+  advanceSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  advanceSectionTitle: { flex: 1, fontSize: 13, fontWeight: '700', color: Colors.primary },
+  advanceMemberRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingTop: 10, marginTop: 10, borderTopWidth: 1, borderTopColor: Colors.border,
+  },
+  advanceMemberAvatar: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.primary + '20', justifyContent: 'center', alignItems: 'center',
+  },
+  advanceMemberAvatarText: { fontSize: 14, fontWeight: '800', color: Colors.primary },
+  advanceMemberName: { fontSize: 13, fontWeight: '700', color: Colors.text },
+  advanceMemberMeta: { fontSize: 11, color: Colors.textMuted },
+  advanceMemberBalance: { fontSize: 14, fontWeight: '800', color: Colors.success },
+  advanceMemberMonths: { fontSize: 11, color: Colors.textMuted },
 });

@@ -54,10 +54,11 @@ export default function InquiriesScreen() {
     ['Fixed Maintenance', selected.maintenance_fixed ? 'Yes' : 'No'],
     ['Water Bill Separate', selected.water_bill_separate ? 'Yes' : 'No'],
     ['Payment Method', selected.payment_method],
+    ['Payment T&C', selected.payment_tc],
     ['Submitted On', new Date(selected.created_at).toLocaleString('en-IN')],
   ].filter(([, v]) => v != null && v !== '') : [];
 
-  const hasGatewayLink = selected?.payment_method === 'Payment Gateway' && selected?.payment_gateway_link;
+  const hasGatewayLink = selected?.payment_method === 'Online (Payment Gateway)' && selected?.payment_gateway_link;
 
   
 

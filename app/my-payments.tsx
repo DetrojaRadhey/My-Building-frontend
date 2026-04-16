@@ -14,8 +14,29 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../utils/api';
 import { API_BASE } from '../constants/api';
 import * as WebBrowser from 'expo-web-browser';
+import * as ImagePicker from 'expo-image-picker';
 
 const MONTHS = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function getPaymentActions(
+  status: string,
+  paymentMethod: string | null
+): ('pay_now' | 'mark_cash' | 'upload_receipt')[] {
+  if (status !== 'pending' && status !== 'partial') return [];
+  const m = paymentMethod ?? 'Online (Payment Gateway)';
+  const actions: ('pay_now' | 'mark_cash' | 'upload_receipt')[] = [];
+  if (m === 'Online (Payment Gateway)' || m === 'Both Cash & Online' || m === 'Cheque & Online') {
+    actions.push('pay_now');
+  }
+  if (m === 'Cash Only' || m === 'Both Cash & Online') {
+    actions.push('mark_cash');
+  }
+  if (m === 'Cheque' || m === 'Cheque & Online') {
+    actions.push('upload_receipt');
+  }
+  if (actions.length === 0) actions.push('pay_now');
+  return actions;
+}
 
 export default function MyPaymentsScreen() {
   const router = useRouter();
@@ -24,11 +45,22 @@ export default function MyPaymentsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [paying, setPaying] = useState<string | null>(null);
+  const [uploadingReceipt, setUploadingReceipt] = useState<string | null>(null);
+  const [tcExpanded, setTcExpanded] = useState(false);
+  const [advanceStatus, setAdvanceStatus] = useState<{
+    credit_balance: number;
+    months_covered: number;
+    monthly_amount: number | null;
+  } | null>(null);
 
   const fetch = async () => {
     try {
-      const res = await api.get('/maintenance/payments?mine=true');
-      setPayments(res.data);
+      const [paymentsRes, advanceRes] = await Promise.all([
+        api.get('/maintenance/payments?mine=true'),
+        api.get('/maintenance/advance/status').catch(() => null),
+      ]);
+      setPayments(paymentsRes.data);
+      if (advanceRes) setAdvanceStatus(advanceRes.data);
     } catch {}
     finally { setLoading(false); setRefreshing(false); }
   };
@@ -48,6 +80,27 @@ export default function MyPaymentsScreen() {
     } catch (e: any) {
       alert(e.response?.data?.error || 'Failed to initiate payment');
     } finally { setPaying(null); }
+  };
+
+  const uploadReceipt = async (recordId: string) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      base64: true,
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    setUploadingReceipt(recordId);
+    try {
+      await api.patch(`/maintenance/payments/${recordId}/receipt`, {
+        receipt_url: `data:image/jpeg;base64,${asset.base64}`,
+      });
+      fetch();
+    } catch (e: any) {
+      Alert.alert('Upload Failed', e.response?.data?.error || 'Could not upload receipt. Please try again.');
+    } finally {
+      setUploadingReceipt(null);
+    }
   };
 
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -85,8 +138,11 @@ export default function MyPaymentsScreen() {
     }
   };
 
-  const totalPaid = payments.filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.amount), 0);
-  const totalPending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.amount), 0);
+  const totalPaid = payments.filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.display_amount ?? p.amount), 0);
+  const totalPending = payments.filter(p => p.status === 'pending' || p.status === 'partial').reduce((s, p) => s + Number(p.amount_due ?? p.display_amount ?? p.amount), 0);
+
+  const buildingPaymentMethod = payments[0]?.building_payment_method ?? null;
+  const buildingPaymentTc = payments[0]?.building_payment_tc ?? null;
 
   
 
@@ -114,6 +170,34 @@ export default function MyPaymentsScreen() {
         </View>
       )}
 
+      {/* Advance credit banner */}
+      {!loading && (
+        <View style={advanceStyles.advanceBanner}>
+          {advanceStatus && advanceStatus.credit_balance > 0 ? (
+            <View style={advanceStyles.advanceCreditInfo}>
+              <Ionicons name="wallet-outline" size={18} color={Colors.success} />
+              <View style={{ flex: 1 }}>
+                <Text style={advanceStyles.advanceCreditTitle}>
+                  ₹{advanceStatus.credit_balance.toLocaleString('en-IN')} advance credit
+                </Text>
+                {advanceStatus.months_covered > 0 && (
+                  <Text style={advanceStyles.advanceCreditSub}>
+                    {advanceStatus.months_covered} month{advanceStatus.months_covered > 1 ? 's' : ''} covered
+                  </Text>
+                )}
+              </View>
+            </View>
+          ) : null}
+          <TouchableOpacity
+            style={advanceStyles.advanceBtn}
+            onPress={() => router.push('/advance-payment')}
+          >
+            <Ionicons name="add-circle-outline" size={16} color={Colors.white} />
+            <Text style={advanceStyles.advanceBtnText}>Pay in Advance</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {loading ? (
         <ActivityIndicator style={{ marginTop: 48 }} size="large" color={Colors.primary} />
       ) : (
@@ -122,6 +206,16 @@ export default function MyPaymentsScreen() {
           keyExtractor={i => i.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetch(); }} />}
+          ListHeaderComponent={buildingPaymentTc ? (
+            <TouchableOpacity style={styles.tcSection} onPress={() => setTcExpanded(e => !e)} activeOpacity={0.8}>
+              <View style={styles.tcHeader}>
+                <Ionicons name="document-text-outline" size={16} color={Colors.primary} />
+                <Text style={styles.tcTitle}>Payment Terms & Conditions</Text>
+                <Ionicons name={tcExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.primary} />
+              </View>
+              {tcExpanded && <Text style={styles.tcBody}>{buildingPaymentTc}</Text>}
+            </TouchableOpacity>
+          ) : null}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyIcon}>🧾</Text>
@@ -131,23 +225,34 @@ export default function MyPaymentsScreen() {
           }
           renderItem={({ item }) => {
             const isPaid = item.status === 'paid';
+            const isReceiptUploaded = item.status === 'receipt_uploaded';
+            const isPartial = item.status === 'partial';
             const bill = item.maintenance_bills;
-            const isCash = item.payment_method === 'cash';
+            const actions = getPaymentActions(item.status, buildingPaymentMethod);
             return (
-              <View style={[styles.card, isPaid && styles.cardPaid]}>
+              <View style={[styles.card, (isPaid || isReceiptUploaded) && styles.cardPaid, isPartial && advanceStyles.cardPartial]}>
                 <View style={styles.cardTop}>
                   <View style={styles.monthBox}>
                     <Text style={styles.monthText}>{MONTHS[bill?.month]}</Text>
                     <Text style={styles.yearText}>{bill?.year}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.cardAmount}>₹{Number(item.amount).toLocaleString('en-IN')}</Text>
+                    <Text style={styles.cardAmount}>₹{Number(item.display_amount ?? item.amount).toLocaleString('en-IN')}</Text>
+                    {item.is_overdue && item.penalty_amount > 0 ? (
+                      <Text style={styles.cardDesc}>
+                        Bill ₹{Number(item.amount).toLocaleString('en-IN')} + Penalty ₹{Number(item.penalty_amount).toLocaleString('en-IN')}
+                      </Text>
+                    ) : null}
                     {bill?.description ? <Text style={styles.cardDesc} numberOfLines={1}>{bill.description}</Text> : null}
                     {bill?.due_date ? <Text style={styles.cardDue}>Due: {new Date(bill.due_date).toLocaleDateString('en-IN')}</Text> : null}
                   </View>
-                  <View style={[styles.statusBadge, { backgroundColor: isPaid ? Colors.success + '20' : '#FEF3C7' }]}>
-                    <Text style={[styles.statusText, { color: isPaid ? Colors.success : '#D97706' }]}>
-                      {isPaid ? (isCash ? 'CASH' : 'PAID') : 'PENDING'}
+                  <View style={[styles.statusBadge, {
+                    backgroundColor: isPaid ? Colors.success + '20' : isReceiptUploaded ? Colors.primary + '20' : isPartial ? '#7C3AED20' : '#FEF3C7'
+                  }]}>
+                    <Text style={[styles.statusText, {
+                      color: isPaid ? Colors.success : isReceiptUploaded ? Colors.primary : isPartial ? '#7C3AED' : '#D97706'
+                    }]}>
+                      {isPaid ? 'PAID' : isReceiptUploaded ? 'SUBMITTED' : isPartial ? 'PARTIAL' : 'PENDING'}
                     </Text>
                   </View>
                 </View>
@@ -157,13 +262,30 @@ export default function MyPaymentsScreen() {
                     <Ionicons name="checkmark-circle" size={13} color={Colors.success} />
                     <Text style={styles.paidText}>
                       Paid on {new Date(item.paid_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      {item.razorpay_payment_id && !isCash ? ` · ${item.razorpay_payment_id}` : ''}
+                      {item.razorpay_payment_id ? ` · ${item.razorpay_payment_id}` : ''}
+                      {item.payment_method === 'advance' ? ' · via advance credit' : ''}
                     </Text>
                   </View>
                 ) : null}
 
+                {isPartial ? (
+                  <View style={styles.paidRow}>
+                    <Ionicons name="wallet-outline" size={13} color="#7C3AED" />
+                    <Text style={[styles.paidText, { color: '#7C3AED' }]}>
+                      ₹{Number(item.advance_credit_applied || 0).toLocaleString('en-IN')} paid via advance · ₹{Number(item.amount_due || 0).toLocaleString('en-IN')} remaining
+                    </Text>
+                  </View>
+                ) : null}
+
+                {isReceiptUploaded ? (
+                  <View style={styles.paidRow}>
+                    <Ionicons name="cloud-upload-outline" size={13} color={Colors.primary} />
+                    <Text style={[styles.paidText, { color: Colors.primary }]}>Receipt Submitted — awaiting verification</Text>
+                  </View>
+                ) : null}
+
                 <View style={styles.cardActions}>
-                  {!isPaid && (
+                  {actions.includes('pay_now') && (
                     <TouchableOpacity
                       style={styles.payBtn}
                       onPress={() => payNow(item.id)}
@@ -172,6 +294,26 @@ export default function MyPaymentsScreen() {
                       {paying === item.id
                         ? <ActivityIndicator size="small" color={Colors.white} />
                         : <Text style={styles.payBtnText}>Pay Now</Text>}
+                    </TouchableOpacity>
+                  )}
+                  {actions.includes('mark_cash') && (
+                    <TouchableOpacity style={styles.cashBtn} onPress={() => Alert.alert('Cash Payment', 'Please inform your Pramukh about your cash payment.')}>
+                      <Text style={styles.cashBtnText}>Mark as Cash</Text>
+                    </TouchableOpacity>
+                  )}
+                  {actions.includes('upload_receipt') && (
+                    <TouchableOpacity
+                      style={styles.uploadBtn}
+                      onPress={() => uploadReceipt(item.id)}
+                      disabled={uploadingReceipt === item.id}
+                    >
+                      {uploadingReceipt === item.id
+                        ? <ActivityIndicator size="small" color={Colors.primary} />
+                        : <>
+                            <Ionicons name="cloud-upload-outline" size={15} color={Colors.primary} />
+                            <Text style={styles.uploadBtnText}>Upload Receipt</Text>
+                          </>
+                      }
                     </TouchableOpacity>
                   )}
                   {isPaid && (
@@ -231,4 +373,31 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 52 },
   emptyTitle: { fontSize: 17, fontWeight: '700', color: Colors.text },
   emptyText: { fontSize: 14, color: Colors.textMuted },
+  tcSection: { backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 12, borderLeftWidth: 3, borderLeftColor: Colors.primary },
+  tcHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tcTitle: { flex: 1, fontSize: 13, fontWeight: '700', color: Colors.primary },
+  tcBody: { fontSize: 13, color: Colors.text, marginTop: 10, lineHeight: 20 },
+  cashBtn: { borderWidth: 1.5, borderColor: Colors.accent, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8 },
+  cashBtnText: { color: Colors.accent, fontWeight: '700', fontSize: 13 },
+  uploadBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1.5, borderColor: Colors.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8 },
+  uploadBtnText: { color: Colors.primary, fontWeight: '700', fontSize: 13 },
+});
+
+// Appended styles for advance payment feature
+const advanceStyles = StyleSheet.create({
+  cardPartial: { borderLeftWidth: 3, borderLeftColor: '#7C3AED' },
+  advanceBanner: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginHorizontal: 16, marginBottom: 4, marginTop: 8,
+    backgroundColor: Colors.white, borderRadius: 12, padding: 12,
+    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
+  },
+  advanceCreditInfo: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  advanceCreditTitle: { fontSize: 13, fontWeight: '700', color: Colors.success },
+  advanceCreditSub: { fontSize: 11, color: Colors.textMuted },
+  advanceBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: Colors.primary, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+  },
+  advanceBtnText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
 });

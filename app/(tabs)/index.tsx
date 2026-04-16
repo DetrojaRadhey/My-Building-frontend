@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Colors } from '../../constants/colors';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  RefreshControl, Alert, Modal, TextInput, Dimensions,
+  RefreshControl, Alert, Modal, TextInput, Dimensions, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
@@ -50,6 +50,7 @@ const MODULE_PALETTE: Record<string, { bg: string; icon: string }> = {
   subscriptions: { bg: '#FEF9C3', icon: '#CA8A04' },
   promoCodes:    { bg: '#FDE8E8', icon: '#EF4444' },
   activityLogs:  { bg: '#F1F5F9', icon: '#475569' },
+  referAndEarn:  { bg: '#FFF0F5', icon: '#EC4899' },
 };
 
 const MODULE_ICONS: Record<string, string> = {
@@ -63,6 +64,7 @@ const MODULE_ICONS: Record<string, string> = {
   users: 'people-circle-outline', inquiries: 'mail-open-outline',
   subscriptions: 'card-outline', promoCodes: 'pricetag-outline',
   activityLogs: 'list-circle-outline',
+  referAndEarn: 'gift-outline',
 };
 
 function getGreeting() {
@@ -83,6 +85,7 @@ export default function HomeScreen() {
   const [showUrgentModal, setShowUrgentModal] = useState(false);
   const [latestAnnouncement, setLatestAnnouncement] = useState<any>(null);
   const [search, setSearch] = useState('');
+  const [buildingLogo, setBuildingLogo] = useState<string | null>(null);
 
   const isPendingUser = user?.role === 'user' && !user?.building_id;
   const needsSubscription = user?.role !== 'admin' && !hasActiveSubscription;
@@ -121,6 +124,7 @@ export default function HomeScreen() {
     { titleKey: 'subscriptions',route: '/subscriptions-admin',  adminOnly: true },
     { titleKey: 'promoCodes',   route: '/promos',               adminOnly: true },
     { titleKey: 'activityLogs', route: '/activity-logs',        adminOnly: true },
+    { titleKey: 'referAndEarn', route: '/refer-and-earn' },
   ];
 
   const modules = allModules.filter((m: any) => {
@@ -138,9 +142,13 @@ export default function HomeScreen() {
   const fetchData = async () => {
     try {
       if (user?.building_id) {
-        const res = await api.get('/announcements');
-        const all = res.data as any[];
+        const [announcementsRes, buildingRes] = await Promise.all([
+          api.get('/announcements'),
+          api.get('/buildings/my').catch(() => null),
+        ]);
+        const all = announcementsRes.data as any[];
         setLatestAnnouncement(all[0] || null);
+        setBuildingLogo(buildingRes?.data?.society_logo ?? null);
       }
     } catch {}
   };
@@ -187,9 +195,9 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <View style={styles.gradientHeader}>
           <View style={styles.headerTop}>
-            <View style={styles.avatarCircle}>
+            <TouchableOpacity onPress={() => router.push('/profile' as any)} style={styles.avatarCircle}>
               <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
-            </View>
+            </TouchableOpacity>
             <Text style={styles.greetingText}>{t('welcome')}, {user?.name}</Text>
           </View>
         </View>
@@ -221,7 +229,10 @@ export default function HomeScreen() {
           {/* Top row: avatar + bell */}
           <View style={styles.headerTop}>
             <TouchableOpacity onPress={() => router.push('/profile' as any)} style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
+              {buildingLogo
+                ? <Image source={{ uri: buildingLogo }} style={styles.avatarImg} />
+                : <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
+              }
             </TouchableOpacity>
             <TouchableOpacity onPress={openUrgentInbox} style={styles.bellBtn}>
               <Ionicons name="notifications-outline" size={22} color={Colors.white} />
@@ -357,8 +368,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)',
+    overflow: 'hidden',
   },
   avatarText: { color: Colors.white, fontSize: 20, fontWeight: '800' },
+  avatarImg: { width: 44, height: 44, borderRadius: 22 },
   bellBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   bellBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: Colors.danger, borderRadius: 9, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, borderWidth: 2, borderColor: '#6366F1' },
   bellBadgeText: { color: Colors.white, fontSize: 9, fontWeight: '800' },
