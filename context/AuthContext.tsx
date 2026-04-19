@@ -6,6 +6,7 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { API_BASE } from '../constants/api';
 import { registerAuthFailureHandler } from '../utils/api';
+import { cacheManager } from '../utils/CacheManager';
 
 type User = {
   id: string;
@@ -95,6 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (sub === undefined) fetchSubscription(t);
 
     registerPushToken(t);
+
+    // Warm cache with critical data in background (non-blocking)
+    const userKey = cacheManager.generateKey('auth', '/auth/me', {}, u.role, u.building_id);
+    cacheManager.warmCache([
+      { key: userKey, fetcher: async () => u },
+    ]);
   };
 
   const registerPushToken = async (t: string) => {
@@ -123,6 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await AsyncStorage.multiRemove(['token', 'user', 'subscription']);
+    // Clear all cached data on logout for security
+    await cacheManager.clear();
     setToken(null);
     setUser(null);
     setSubscription(null);
@@ -131,11 +140,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Wire up the API interceptor so 401/403 auto-triggers logout
   useEffect(() => {
     registerAuthFailureHandler(() => {
+      cacheManager.clear();
       setToken(null);
       setUser(null);
       setSubscription(null);
     });
   }, []);
+
+  // Clear cache when user role changes (role-based cache isolation)
+  const prevRoleRef = React.useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (user?.role && prevRoleRef.current && prevRoleRef.current !== user.role) {
+      cacheManager.clear();
+    }
+    prevRoleRef.current = user?.role;
+  }, [user?.role]);
 
   const refreshSubscription = async () => {
     const t = token || (await AsyncStorage.getItem('token'));

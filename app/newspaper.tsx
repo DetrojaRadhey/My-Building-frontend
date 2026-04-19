@@ -10,6 +10,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import { cacheManager, CACHE_PRESETS } from '../utils/CacheManager';
 
 const LANGUAGES = [
   { key: 'english', label: 'English', flag: '🇬🇧' },
@@ -64,11 +65,16 @@ export default function NewspaperScreen() {
   };
 
   const fetchAvailableDates = useCallback(async () => {
+    const cacheKey = cacheManager.generateKey('newspaper', '/newspapers/available-dates', { language }, user?.role);
+    const cached = await cacheManager.get<any[]>(cacheKey, CACHE_PRESETS.buildingWide);
+    if (cached) setAvailableDates(cached.map((e: any) => e.date ?? e));
     try {
       const res = await api.get('/newspapers/available-dates', { params: { language } });
-      setAvailableDates(res.data.map((e: any) => e.date));
+      const dates = res.data.map((e: any) => e.date ?? e);
+      await cacheManager.set(cacheKey, res.data, CACHE_PRESETS.buildingWide);
+      setAvailableDates(dates);
     } catch {}
-  }, [language]);
+  }, [language, user?.role]);
 
   const fetchEdition = useCallback(async () => {
     setLoading(true);
@@ -93,11 +99,15 @@ export default function NewspaperScreen() {
 
   const fetchRecentEditions = useCallback(async () => {
     if (!isAdmin) return;
+    const cacheKey = cacheManager.generateKey('newspaper', '/newspapers/recent', {}, user?.role);
+    const cached = await cacheManager.get<any[]>(cacheKey, CACHE_PRESETS.buildingWide);
+    if (cached) setRecentEditions(cached);
     try {
       const res = await api.get('/newspapers/recent');
+      await cacheManager.set(cacheKey, res.data, CACHE_PRESETS.buildingWide);
       setRecentEditions(res.data);
     } catch {}
-  }, [isAdmin]);
+  }, [isAdmin, user?.role]);
 
   useFocusEffect(useCallback(() => {
     fetchAvailableDates();

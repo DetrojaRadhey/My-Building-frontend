@@ -13,6 +13,7 @@ import { useMarkNotificationsRead } from '../hooks/useMarkNotificationsRead';
 import { useActivityLog } from '../hooks/useActivityLog';
 import { useBuildings, Building } from '../hooks/useBuildings';
 import BuildingDropdown from '../components/BuildingDropdown';
+import { cacheManager, CACHE_PRESETS } from '../utils/CacheManager';
 
 type BillingCategory = 'maintenance' | 'water_meter' | 'special';
 
@@ -68,13 +69,37 @@ export default function MaintenanceScreen() {
   const [loading, setLoading] = useState(!isAdmin); // admin waits for building selection
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchPendingCounts = useCallback(async () => {
+  const fetchPendingCounts = useCallback(async (forceRefresh = false) => {
     // Admin must select a building first
     if (isAdmin && !selectedBuilding) return;
+
+    const cacheKey = cacheManager.generateKey(
+      'maintenance', '/maintenance/payments',
+      { mine: 'true', building_id: selectedBuilding?.id },
+      user?.role, selectedBuilding?.id,
+    );
+
+    // Show cached data instantly on first load
+    if (!forceRefresh) {
+      const cached = await cacheManager.get<any[]>(cacheKey, CACHE_PRESETS.userSpecific);
+      if (cached) {
+        const counts: Record<BillingCategory, number> = { maintenance: 0, water_meter: 0, special: 0 };
+        for (const p of cached) {
+          if (p.status === 'pending') {
+            const cat = (p.category || p.maintenance_bills?.category || 'maintenance') as BillingCategory;
+            if (cat in counts) counts[cat]++;
+          }
+        }
+        setPendingCounts(counts);
+        setLoading(false);
+      }
+    }
+
     try {
       const params: any = { mine: 'true' };
       if (isAdmin && selectedBuilding) params.building_id = selectedBuilding.id;
       const res = await api.get('/maintenance/payments', { params });
+      await cacheManager.set(cacheKey, res.data, CACHE_PRESETS.userSpecific);
       const counts: Record<BillingCategory, number> = { maintenance: 0, water_meter: 0, special: 0 };
       for (const p of res.data) {
         if (p.status === 'pending') {
@@ -85,7 +110,7 @@ export default function MaintenanceScreen() {
       setPendingCounts(counts);
     } catch {}
     finally { setLoading(false); setRefreshing(false); }
-  }, [isAdmin, selectedBuilding]);
+  }, [isAdmin, selectedBuilding, user?.role]);
 
   useFocusEffect(useCallback(() => {
     if (!isAdmin) {
@@ -138,7 +163,11 @@ export default function MaintenanceScreen() {
 
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchPendingCounts(); }} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => {
+          setRefreshing(true);
+          await cacheManager.invalidate('maintenance:*');
+          fetchPendingCounts(true);
+        }} />}
       >
         {/* Admin: building dropdown */}
         {isAdmin && (

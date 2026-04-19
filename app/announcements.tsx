@@ -12,6 +12,7 @@ import api from '../utils/api';
 import BuildingDropdown from '../components/BuildingDropdown';
 import { useBuildings, Building } from '../hooks/useBuildings';
 import { useMarkNotificationsRead } from '../hooks/useMarkNotificationsRead';
+import { cacheManager, CACHE_PRESETS } from '../utils/CacheManager';
 
 export default function AnnouncementsScreen() {
   const { user } = useAuth();
@@ -41,10 +42,27 @@ export default function AnnouncementsScreen() {
 
   
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = async (forceRefresh = false) => {
+    const buildingId = isAdmin && selectedBuilding ? selectedBuilding.id : undefined;
+    const cacheKey = cacheManager.generateKey(
+      'announcements', '/announcements',
+      buildingId ? { building_id: buildingId } : {},
+      user?.role, buildingId,
+    );
+
+    // Show cached data instantly
+    if (!forceRefresh) {
+      const cached = await cacheManager.get<any[]>(cacheKey, CACHE_PRESETS.buildingWide);
+      if (cached) {
+        setAnnouncements(cached);
+        setLoading(false);
+      }
+    }
+
     try {
       const params = isAdmin && selectedBuilding ? { building_id: selectedBuilding.id } : {};
       const res = await api.get('/announcements', { params });
+      await cacheManager.set(cacheKey, res.data, CACHE_PRESETS.buildingWide);
       setAnnouncements(res.data);
     } catch (e: any) {
       Alert.alert('Error', e.response?.data?.error || 'Failed to load');
@@ -123,7 +141,11 @@ export default function AnnouncementsScreen() {
           keyExtractor={(i) => i.id}
           renderItem={renderItem}
           contentContainerStyle={{ padding: 16 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchAnnouncements(); }} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => {
+            setRefreshing(true);
+            await cacheManager.invalidate('announcements:*');
+            fetchAnnouncements(true);
+          }} />}
           ListEmptyComponent={<Text style={styles.empty}>No announcements yet</Text>}
         />
       )}

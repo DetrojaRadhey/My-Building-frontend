@@ -14,6 +14,7 @@ import { useBuildings } from '../hooks/useBuildings';
 import BuildingDropdown from '../components/BuildingDropdown';
 import type { Building } from '../hooks/useBuildings';
 import { useMarkNotificationsRead } from '../hooks/useMarkNotificationsRead';
+import { cacheManager, CACHE_PRESETS } from '../utils/CacheManager';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -82,13 +83,22 @@ export default function VisitorsScreen() {
   }, [calMonth, calYear, selectedBuilding, isAdmin]);
 
   // Fetch visitors for selected date
-  const fetchVisitors = useCallback(async (date: string) => {
+  const fetchVisitors = useCallback(async (date: string, forceRefresh = false) => {
     if (isAdmin && !selectedBuilding) return;
+    const buildingId = isAdmin ? selectedBuilding?.id : user?.building_id;
+    const cacheKey = cacheManager.generateKey('visitors', '/visitors', { date, building_id: buildingId }, user?.role, buildingId);
+
+    if (!forceRefresh) {
+      const cached = await cacheManager.get<any[]>(cacheKey, CACHE_PRESETS.userSpecific);
+      if (cached) { setVisitors(cached); setListLoading(false); }
+    }
+
     setListLoading(true);
     try {
       const params: any = { date };
       if (isAdmin && selectedBuilding) params.building_id = selectedBuilding.id;
       const res = await api.get('/visitors', { params });
+      await cacheManager.set(cacheKey, res.data, CACHE_PRESETS.userSpecific);
       setVisitors(res.data);
     } catch (e: any) {
       Alert.alert('Error', e.response?.data?.error || 'Failed to load visitors');
@@ -96,7 +106,7 @@ export default function VisitorsScreen() {
       setListLoading(false);
       setRefreshing(false);
     }
-  }, [selectedBuilding, isAdmin]);
+  }, [selectedBuilding, isAdmin, user?.role, user?.building_id]);
 
   useEffect(() => { fetchDates(); }, [fetchDates]);
   useEffect(() => { fetchVisitors(selectedDate); }, [selectedDate, fetchVisitors]);
@@ -242,7 +252,12 @@ export default function VisitorsScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchVisitors(selectedDate); fetchDates(); }} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => {
+          setRefreshing(true);
+          await cacheManager.invalidate('visitors:*');
+          fetchVisitors(selectedDate, true);
+          fetchDates();
+        }} />}
       >
         {/* Calendar */}
         {renderCalendar()}

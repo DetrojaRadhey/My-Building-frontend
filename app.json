@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "My_Building",
+    "name": "My Building",
     "slug": "My_Building",
     "version": "1.0.3",
     "orientation": "portrait",
@@ -24,10 +24,10 @@
       "versionCode": 3,
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.NOTIFICATIONS",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
       ]
     },
     "web": {

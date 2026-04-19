@@ -7,6 +7,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { LANGUAGES } from '../../constants/translations';
 import { useRouter } from 'expo-router';
 import api from '../../utils/api';
+import { cacheManager } from '../../utils/CacheManager';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -30,6 +31,16 @@ export default function ProfileScreen() {
     Alert.alert(t('logout'), t('logoutConfirm'), [
       { text: t('cancel'), style: 'cancel' },
       { text: t('logout'), style: 'destructive', onPress: logout },
+    ]);
+  };
+
+  const handleClearCache = () => {
+    Alert.alert('Clear Cache', 'This will remove all locally cached data. The app will reload fresh data from the server.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Clear', style: 'destructive', onPress: async () => {
+        await cacheManager.clear();
+        Alert.alert('Done', 'Cache cleared successfully');
+      }},
     ]);
   };
 
@@ -137,6 +148,32 @@ export default function ProfileScreen() {
         <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
         <Text style={styles.logoutText}>{t('logout')}</Text>
       </TouchableOpacity>
+
+      {/* Cache management */}
+      <View style={styles.menuSection}>
+        <TouchableOpacity style={styles.menuItem} onPress={handleClearCache}>
+          <View style={styles.menuLeft}>
+            <Ionicons name="trash-outline" size={22} color={Colors.textMuted} />
+            <View>
+              <Text style={styles.menuLabel}>Clear Cache</Text>
+              <Text style={styles.menuSub}>Free up storage and reload fresh data</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+        </TouchableOpacity>
+        {__DEV__ && (
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemBorder]} onPress={() => router.push('/cache-debug' as any)}>
+            <View style={styles.menuLeft}>
+              <Ionicons name="bug-outline" size={22} color={Colors.textMuted} />
+              <View>
+                <Text style={styles.menuLabel}>Cache Debug</Text>
+                <Text style={styles.menuSub}>Dev only — view metrics and errors</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={{ height: 40 }} />
 

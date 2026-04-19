@@ -2,9 +2,11 @@ import { useEffect, useRef } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { LanguageProvider, useLanguage } from '../context/LanguageContext';
+import { CacheProvider } from '../context/CacheContext';
 import { ActivityIndicator, View } from 'react-native';
 import { Colors } from '../constants/colors';
 import NoInternetOverlay from '../components/NoInternetOverlay';
+import { OfflineIndicator } from '../components/OfflineIndicator';
 
 function RootNavigator() {
   const { user, loading: authLoading } = useAuth();
@@ -84,6 +86,7 @@ function RootNavigator() {
       <Stack.Screen name="complaints-admin" />
       <Stack.Screen name="activity-logs" />
       <Stack.Screen name="website-contacts" />
+      <Stack.Screen name="cache-debug" />
       <Stack.Screen name="entry/[building_id]" options={{ headerShown: false }} />
     </Stack>
   );
@@ -91,11 +94,14 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <RootNavigator />
-        <NoInternetOverlay />
-      </AuthProvider>
-    </LanguageProvider>
+    <CacheProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <OfflineIndicator />
+          <RootNavigator />
+          <NoInternetOverlay />
+        </AuthProvider>
+      </LanguageProvider>
+    </CacheProvider>
   );
 }

@@ -11,6 +11,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { useActivityLog } from '../../hooks/useActivityLog';
+import { cacheManager } from '../../utils/CacheManager';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_SIZE = (SCREEN_W - 48) / 3;
@@ -213,6 +214,11 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    // Invalidate all module caches on home screen pull-to-refresh
+    await cacheManager.invalidate('announcements:*');
+    await cacheManager.invalidate('maintenance:*');
+    await cacheManager.invalidate('visitors:*');
+    await cacheManager.invalidate('newspaper:*');
     await Promise.all([fetchData(), fetchBadges()]);
     setRefreshing(false);
   };
