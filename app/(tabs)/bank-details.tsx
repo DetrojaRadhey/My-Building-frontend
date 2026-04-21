@@ -53,7 +53,7 @@ export default function BankDetailsScreen() {
 
   useEffect(() => {
     if (activeBuildingId) fetchDetails();
-    else setDetails({ bank_name: '', bank_branch: '', bank_ifsc: '', bank_account: '' });
+    else setDetails({ bank_name: '', bank_branch: '', bank_ifsc: '', bank_account: '', beneficiary_name: '', contact_name: '', contact_email: '', contact_mobile: '' });
   }, [activeBuildingId]);
 
   const fetchDetails = async () => {
@@ -137,11 +137,13 @@ export default function BankDetailsScreen() {
           <Ionicons name="arrow-back" size={22} color={Colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('bankDetails')}</Text>
-        {activeBuildingId && (
+        {activeBuildingId ? (
           <TouchableOpacity style={styles.editBtn} onPress={() => setEditing(!editing)}>
             <Ionicons name={editing ? 'close' : 'create-outline'} size={20} color={Colors.white} />
             <Text style={styles.editBtnText}>{editing ? 'Cancel' : 'Edit'}</Text>
           </TouchableOpacity>
+        ) : (
+          <View style={styles.editBtn} />
         )}
       </View>
 
@@ -252,7 +254,7 @@ export default function BankDetailsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { backgroundColor: '#3B5FC0', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800' },
+  headerTitle: { color: Colors.white, fontSize: 22, fontWeight: '800', flex: 1, textAlign: 'center' },
   backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 4 },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   editBtnText: { color: Colors.white, fontWeight: '700', fontSize: 14 },

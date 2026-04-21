@@ -138,7 +138,7 @@ export default function PromosScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={[styles.statNum, { color: Colors.primary }]}>{active.length}</Text>
-          <Text style={styles.statLabel}>{t('active')}</Text>
+          <Text style={styles.statLabel}>Active</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={[styles.statNum, { color: Colors.success }]}>{used.length}</Text>
