@@ -23,9 +23,9 @@ const CAT_ICONS: Record<string, string> = {
 };
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  open:        { label: 'Open',        color: '#EF4444', bg: '#FEF2F2', icon: 'alert-circle' },
+  open: { label: 'Open', color: '#EF4444', bg: '#FEF2F2', icon: 'alert-circle' },
   in_progress: { label: 'In Progress', color: '#D97706', bg: '#FFFBEB', icon: 'time' },
-  resolved:    { label: 'Resolved',    color: '#16A34A', bg: '#F0FDF4', icon: 'checkmark-circle' },
+  resolved: { label: 'Resolved', color: '#16A34A', bg: '#F0FDF4', icon: 'checkmark-circle' },
 };
 
 const SECTION_ORDER = ['open', 'in_progress', 'resolved'];
@@ -58,6 +58,7 @@ export default function AdminComplaintsScreen() {
   const [detailItem, setDetailItem] = useState<any>(null);
   const [activeStatus, setActiveStatus] = useState<'open' | 'in_progress' | 'resolved'>('open');
   const [imageViewerUri, setImageViewerUri] = useState<string | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   useFocusEffect(useCallback(() => { fetchComplaints(); }, [selectedBuilding]));
 
@@ -241,14 +242,14 @@ export default function AdminComplaintsScreen() {
       </View>
       {/* Summary cards */}
       <View style={styles.summaryRow}>
-        <SummaryCard count={totalOpen}       label="Open"        color="#EF4444" icon="alert-circle" />
+        <SummaryCard count={totalOpen} label="Open" color="#EF4444" icon="alert-circle" />
         <SummaryCard count={totalInProgress} label="In Progress" color="#D97706" icon="time" />
-        <SummaryCard count={totalResolved}   label="Resolved"    color="#16A34A" icon="checkmark-circle" />
+        <SummaryCard count={totalResolved} label="Resolved" color="#16A34A" icon="checkmark-circle" />
       </View>
     </>
   );
 
-  
+
 
   return (
     <View style={styles.container}>
@@ -389,9 +390,9 @@ export default function AdminComplaintsScreen() {
                 {addImageUri
                   ? <Image source={{ uri: addImageUri }} style={styles.photoPreview} />
                   : <View style={styles.photoPlaceholder}>
-                      <Ionicons name="image-outline" size={30} color={Colors.textMuted} />
-                      <Text style={styles.photoPlaceholderText}>Tap to attach photo</Text>
-                    </View>
+                    <Ionicons name="image-outline" size={30} color={Colors.textMuted} />
+                    <Text style={styles.photoPlaceholderText}>Tap to attach photo</Text>
+                  </View>
                 }
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitBtn, submitting && { opacity: 0.6 }]} onPress={submitAdd} disabled={submitting}>
@@ -472,9 +473,9 @@ export default function AdminComplaintsScreen() {
                 {editImageUri
                   ? <Image source={{ uri: editImageUri }} style={styles.photoPreview} />
                   : <View style={styles.photoPlaceholder}>
-                      <Ionicons name="image-outline" size={30} color={Colors.textMuted} />
-                      <Text style={styles.photoPlaceholderText}>Tap to change photo</Text>
-                    </View>
+                    <Ionicons name="image-outline" size={30} color={Colors.textMuted} />
+                    <Text style={styles.photoPlaceholderText}>Tap to change photo</Text>
+                  </View>
                 }
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitBtn, saving && { opacity: 0.6 }]} onPress={submitEdit} disabled={saving}>
@@ -545,12 +546,11 @@ export default function AdminComplaintsScreen() {
                       <Text style={styles.detailBlockText}>{detailItem.description}</Text>
                     </View>
                   ) : null}
-                  {detailItem.photo_url
-                    ? <Pressable onPress={() => setImageViewerUri(detailItem.photo_url)}>
-                        <Image source={{ uri: detailItem.photo_url }} style={styles.detailPhoto} resizeMode="cover" />
-                        <Text style={styles.tapToExpand}>Tap to expand</Text>
-                      </Pressable>
-                    : null}
+                  {detailItem.photo_url ? (
+                    <TouchableOpacity onPress={() => setPreviewImageUrl(detailItem.photo_url)} activeOpacity={0.8}>
+                      <Image source={{ uri: detailItem.photo_url }} style={styles.detailPhoto} resizeMode="cover" />
+                    </TouchableOpacity>
+                  ) : null}
                   {detailItem.remark ? (
                     <View style={[styles.detailBlock, { backgroundColor: meta.bg, borderLeftWidth: 3, borderLeftColor: meta.color }]}>
                       <Text style={[styles.detailBlockLabel, { color: meta.color }]}>Remark</Text>
@@ -580,12 +580,33 @@ export default function AdminComplaintsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ── Image Preview Modal ── */}
+      <Modal visible={!!previewImageUrl} transparent animationType="fade" onRequestClose={() => setPreviewImageUrl(null)}>
+        <TouchableOpacity style={styles.imagePreviewOverlay} activeOpacity={1} onPress={() => setPreviewImageUrl(null)}>
+          <View style={styles.imagePreviewContainer} onStartShouldSetResponder={() => true}>
+            <TouchableOpacity style={styles.imagePreviewCloseBtn} onPress={() => setPreviewImageUrl(null)}>
+              <Ionicons name="close" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <ScrollView
+              contentContainerStyle={styles.imagePreviewScroll}
+              maximumZoomScale={4}
+              minimumZoomScale={1}
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              centerContent
+            >
+              <Image source={{ uri: previewImageUrl || '' }} style={styles.imagePreviewPhoto} resizeMode="contain" />
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
 
 function SummaryCard({ count, label, color, icon }: { count: number; label: string; color: string; icon: string }) {
-  
+
   return (
     <View style={[styles.summaryCard, { borderTopColor: color }]}>
       <Ionicons name={icon as any} size={20} color={color} />
@@ -764,4 +785,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center', gap: 8, borderRadius: 12, padding: 14,
   },
   detailActionText: { fontSize: 15, fontWeight: '700', color: Colors.white },
+
+  imagePreviewOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  imagePreviewContainer: {
+    width: '90%', aspectRatio: 1,
+    backgroundColor: '#000', borderRadius: 16,
+    overflow: 'hidden', position: 'relative',
+  },
+  imagePreviewCloseBtn: {
+    position: 'absolute', top: 12, right: 12,
+    zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20, padding: 4,
+  },
+  imagePreviewScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
+  imagePreviewPhoto: { width: '100%', height: '100%' },
 });
